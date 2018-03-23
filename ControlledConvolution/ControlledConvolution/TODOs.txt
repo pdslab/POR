@@ -1,0 +1,10 @@
+1. Generate corrdinates .1 
+2. Measuring image patchs 
+	Entropy 
+	Mutual Information 
+	Line histogram .2
+3. Implementation for ordering patchs 
+4. Sort patches according to some criteria 
+5.
+6. Dataset readers 
+7. Stitching 
