@@ -19,14 +19,64 @@ double Reconstructor::HammingNorm(const Patch& p1, const Patch& p2)
 	return cv::norm(p1.GetMat(), p2.GetMat(), NORM_HAMMING);
 }
 
-double Reconstructor::PSNR(const Patch & p)
+double Reconstructor::PeakSignalToNoiseRatio(const Patch & p)
 {
 	return 0.0;
 }
 
-double Reconstructor::Entropy(const Patch & p)
+cv::Scalar Reconstructor::Entropy(const Patch& p)
 {
-	return 0.0;
+	const auto image = p.GetMat();
+
+	std::vector<cv::Mat> channels;
+
+	cv::split(image, channels);
+
+	auto histSize = 255;
+
+	float range[] = { 0,256 };
+
+	const float* histRange = { range };
+
+	const auto uniform = true;
+	const auto accumulate = false;
+
+	cv::Mat hist0, hist1, hist2;
+
+	//Calculate histogram of each color channel
+	cv::calcHist(&channels[0], 1, nullptr, cv::Mat(), hist0, 1, &histSize, &histRange, uniform, accumulate);
+	cv::calcHist(&channels[1], 1, nullptr, cv::Mat(), hist1, 1, &histSize, &histRange, uniform, accumulate);
+	cv::calcHist(&channels[2], 1, nullptr, cv::Mat(), hist2, 1, &histSize, &histRange, uniform, accumulate);
+
+	float f0 = 0, f1 = 0, f2 = 0;
+
+	for(auto i=0; i <histSize;i++)
+	{
+		f0 += hist0.at<float>(i);
+		f1 += hist1.at<float>(i);
+		f2 += hist2.at<float>(i);
+	}
+
+	cv::Scalar e;
+	e.val[0] = 0;
+	e.val[1] = 0;
+	e.val[2] = 0;
+
+	for (auto i=0; i < histSize; i++)
+	{
+		const auto p0 = abs(hist0.at<float>(i)) / f0;
+		const auto p1 = abs(hist1.at<float>(i)) / f1;
+		const auto p2 = abs(hist2.at<float>(i)) / f2;
+
+		if (p0 != 0)
+			e.val[0] += -p0*log10(p0);
+		if (p1 != 0)
+			e.val[1] += -p1*log10(p1);
+		if (p2 != 0)
+			e.val[2] += -p2*log10(p2);
+	}
+
+	return e;
 }
 
 double Reconstructor::MutualInformation(const Patch & p1, const Patch & p2)
@@ -61,7 +111,7 @@ void Reconstructor::SortPatches(const Sample *s, const MeasureType t)
 		if (t == MeasureType::l2Norm) std::sort(patches.begin(), patches.end(), L2Norm);
 }
 
-void Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t) const
+bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t) const
 {
 	auto p0 = v[0];
 	v[0].SetName("0");
@@ -71,48 +121,89 @@ void Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t) const
 
 	//cout << "Sorting patches, size = "<<v.size() << endl;
 
-	for (auto i = 0; i <= v.size() - 1; i++)
+	if (t == MeasureType::averageEntropy)
 	{
-		for (auto j = i + 1; j < v.size() && j + 1 <= v.size() - 1; j++)
-		{
-			switch (t)
-			{
-			case MeasureType::l1Norm:
-				norm1 = L1Norm(v[i], v[j]);
-				norm2 = L1Norm(v[j], v[j + 1]);
-				break;
-			case MeasureType::l2Norm:
-				norm1 = L2Norm(v[i], v[j]);
-				norm2 = L2Norm(v[j], v[j + 1]);
-				break;
-			case MeasureType::hammingNorm:
-				norm1 = HammingNorm(v[i], v[j]);
-				norm2 = HammingNorm(v[j], v[j + 1]);
-				break;
-			default: break;
-			}
-			/*const auto currentNorm = L2Norm(v[i], v[j]);
-			const auto currentNorm2 = L2Norm(v[i], v[j + 1]);*/
+		std::sort(v.begin(), v.end(), CompareUsingAverageEntropy);
+		for (auto i = 0; i < v.size(); i++)
+			v[i].SetName(to_string(i));
 
-			if (norm1 != 0 && norm2 != 0)
+		return true;
+	}
+	if (t == MeasureType::channel0Entropy)
+	{
+		std::sort(v.begin(), v.end(), CompareUsingChannel0Entropy);
+		for (auto i = 0; i < v.size(); i++)
+			v[i].SetName(to_string(i));
+
+		return true;
+	}
+
+	if (t == MeasureType::channel1Entropy)
+	{
+		std::sort(v.begin(), v.end(), CompareUsingChannel1Entropy);
+		for (auto i = 0; i < v.size(); i++)
+			v[i].SetName(to_string(i));
+
+		return true;
+	}
+
+	if (t == MeasureType::channel2Entropy)
+	{
+		std::sort(v.begin(), v.end(), CompareUsingChannel2Entropy);
+		for (auto i = 0; i < v.size(); i++)
+			v[i].SetName(to_string(i));
+
+		return true;
+	}
+
+	if (t == MeasureType::l1Norm || t == MeasureType::l2Norm || t == MeasureType::hammingNorm)
+	{
+		for (auto i = 0; i <= v.size() - 1; i++)
+		{
+			for (auto j = i + 1; j < v.size() && j + 1 <= v.size() - 1; j++)
 			{
-				if (norm1 > norm2)
+				switch (t)
 				{
-					lastSmallestNorm = norm2;
-					v[j + 1].SetName(to_string(j));
-					std::swap(v[j], v[j + 1]);
-					p0 = v[j + 1];
+				case MeasureType::l1Norm:
+					norm1 = L1Norm(v[i], v[j]);
+					norm2 = L1Norm(v[j], v[j + 1]);
+					break;
+				case MeasureType::l2Norm:
+					norm1 = L2Norm(v[i], v[j]);
+					norm2 = L2Norm(v[j], v[j + 1]);
+					break;
+				case MeasureType::hammingNorm:
+					norm1 = HammingNorm(v[i], v[j]);
+					norm2 = HammingNorm(v[j], v[j + 1]);
+					break;
+				default: break;
 				}
-				else if (norm1 < norm2)
+				/*const auto currentNorm = L2Norm(v[i], v[j]);
+				const auto currentNorm2 = L2Norm(v[i], v[j + 1]);*/
+
+				if (norm1 != 0 && norm2 != 0)
 				{
-					p0 = v[j];
-					v[j].SetName(to_string(j));
+					if (norm1 > norm2)
+					{
+						lastSmallestNorm = norm2;
+						v[j + 1].SetName(to_string(j));
+						std::swap(v[j], v[j + 1]);
+						p0 = v[j + 1];
+					}
+					else if (norm1 < norm2)
+					{
+						p0 = v[j];
+						v[j].SetName(to_string(j));
+					}
 				}
 			}
 		}
-	}
 
-	v[v.size() - 1].SetName(to_string(v.size() - 1));
+		v[v.size() - 1].SetName(to_string(v.size() - 1));
+
+		return true;
+	}
+	throw exception("SortPatches -> Unknown measure type!");
 }
 
 void Reconstructor::Stitch(Sample* s)
@@ -144,6 +235,40 @@ void Reconstructor::Reconstruct(Sample* s)
 	const auto reconstructedOutput = Common::ConcatenateMat(patches);
 
 	Common::Show(reconstructedOutput, "");
+}
+
+bool Reconstructor::CompareUsingAverageEntropy(const Patch& p1, const Patch& p2)
+{
+	auto entropy1 = Entropy(p1);
+	auto entropy2 = Entropy(p2);
+	const float e1 = (entropy1[0] + entropy1[1] + entropy1[2]) / 3.0;
+	const float e2 = (entropy2[0] + entropy2[1] + entropy2[2]) / 3.0;
+
+	return e1 > e2;
+}
+
+bool Reconstructor::CompareUsingChannel0Entropy(const Patch& p1, const Patch& p2)
+{
+	const auto entropy1 = Entropy(p1)[0];
+	const auto entropy2 = Entropy(p2)[0];
+
+	return entropy1 > entropy2;
+}
+
+bool Reconstructor::CompareUsingChannel1Entropy(const Patch & p1, const Patch & p2)
+{
+	const auto entropy1 = Entropy(p1)[1];
+	const auto entropy2 = Entropy(p2)[1];
+
+	return entropy1 > entropy2;;
+}
+
+bool Reconstructor::CompareUsingChannel2Entropy(const Patch & p1, const Patch & p2)
+{
+	const auto entropy1 = Entropy(p1)[2];
+	const auto entropy2 = Entropy(p2)[2];
+
+	return entropy1 > entropy2;
 }
 
 void Reconstructor::VisualizePatches(const int& howMany) const

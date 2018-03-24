@@ -6,7 +6,7 @@
 #include "sample.h"
 
 
-enum class MeasureType {hist, l1Norm, l2Norm, hammingNorm};
+enum class MeasureType {hist, l1Norm, l2Norm, hammingNorm,channel0Entropy, channel1Entropy, channel2Entropy, averageEntropy, psnr,mi};
 
 class Reconstructor
 {
@@ -15,8 +15,8 @@ public:
 	double L1Norm(const Patch &p1, const Patch &p2) const;
 	static double L2Norm(const Patch &p1, const Patch &p2);
 	static double HammingNorm(const Patch &p1, const Patch& p2);
-	static double PSNR(const Patch &p);
-	static double Entropy(const Patch &p);
+	static double PeakSignalToNoiseRatio(const Patch &p);
+	static cv::Scalar Entropy(const Patch& p);
 	static double MutualInformation(const Patch& p1, const Patch& p2);
 	static double Histogram(const Patch& p1);
 	Reconstructor();
@@ -25,9 +25,14 @@ public:
 
 #pragma region operators
 	void SortPatches(const Sample *s, MeasureType t);
-	void SortPatches(vector<Patch> &v, MeasureType t) const;
+	bool SortPatches(vector<Patch>& v, MeasureType t) const;
+	void SortPatches(vector<Patch> &v, MeasureType t, bool verbos) const;
 	static void Stitch(Sample  *v);
 	static void Reconstruct(Sample *s);
+	static bool CompareUsingAverageEntropy(const Patch& p1, const Patch& p2);
+	static bool CompareUsingChannel0Entropy(const Patch& p1, const Patch& p2);
+	static bool CompareUsingChannel1Entropy(const Patch& p1, const Patch& p2);
+	static bool CompareUsingChannel2Entropy(const Patch& p1, const Patch& p2);
 #pragma endregion
 #pragma region setters and getters
 	void SetSample(Sample *s) { sample_ = s; }

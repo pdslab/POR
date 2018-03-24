@@ -86,10 +86,11 @@ const int MAX_NAME_DEFAULT = 1024;
 
 int main(const int argc, char** argv)
 {
+	cout << "Starting ...\n";
 	const String keys =
 		"{help h usage ?   |      | print this message}"
 		"{input_dir i iDir |<none>| directory containing samples}"
-		"{measure m        |l1Norm| image2 for compare}"
+		"{measure m        |l1Norm| measure to use for comparison}"
 		"{output_dir oDir o|<none>| output directory}"
 		"{format f         |jpeg| output format}"
 		"{x patch_width pw |8| patch width }"
@@ -221,6 +222,10 @@ int main(const int argc, char** argv)
 		if (measure == "l1Norm" || measure == "l1norm") mt = MeasureType::l1Norm;
 		else if (measure == "l2norm" || measure == "l2Norm") mt = MeasureType::l2Norm;
 		else if (measure == "hamming" || measure == "hamming") mt = MeasureType::hammingNorm;
+		else if (measure == "c0e" || measure == "channel0entropy") mt = MeasureType::channel0Entropy;
+		else if (measure == "c1e" || measure == "channel1entropy") mt = MeasureType::channel1Entropy;
+		else if (measure == "c2e" || measure == "channel2entropy") mt = MeasureType::channel2Entropy;
+		else if (measure == "ae" || measure == "averageentropy") mt = MeasureType::averageEntropy;
 		else
 		{
 			cerr << "Exit code: -4, Unknown measure type. Aborting ...\n";

@@ -32,7 +32,10 @@ public:
 	static cv::Mat ConcatenateMat(std::vector<cv::Mat> &vec);
 	static void	ReadBatch(std::string filename, std::vector<cv::Mat> &vec, cv::Mat &label);
 	static void SaveImage(const cv::Mat &mat, const std::string& filename, const std::string& format);
-	
+
+	static bool GreaterThan(const double u, const double v) { return u > v; }
+	static bool GreaterThan(const float u, const float v) { return u > v; }
+	static bool GreaterThan(const int u, const int v) { return u > v; }
 };
 #endif
 
