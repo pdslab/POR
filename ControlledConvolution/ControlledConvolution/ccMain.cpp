@@ -90,7 +90,7 @@ int main(const int argc, char** argv)
 	const String keys =
 		"{help h usage ?   |      | print this message}"
 		"{input_dir i iDir |<none>| directory containing samples}"
-		"{measure m        |l1Norm| measure to use for comparison}"
+		"{measure m        || measure to use for comparison}"
 		"{output_dir oDir o|<none>| output directory}"
 		"{format f         |jpeg| output format}"
 		"{x patch_width pw |8| patch width }"

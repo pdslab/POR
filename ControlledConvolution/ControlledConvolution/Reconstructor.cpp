@@ -48,6 +48,10 @@ cv::Scalar Reconstructor::Entropy(const Patch& p)
 	cv::calcHist(&channels[1], 1, nullptr, cv::Mat(), hist1, 1, &histSize, &histRange, uniform, accumulate);
 	cv::calcHist(&channels[2], 1, nullptr, cv::Mat(), hist2, 1, &histSize, &histRange, uniform, accumulate);
 
+	hist0 = mean(hist0);
+	hist1 = mean(hist1);
+	hist2 = mean(hist2);
+
 	float f0 = 0, f1 = 0, f2 = 0;
 
 	for(auto i=0; i <histSize;i++)
@@ -75,6 +79,10 @@ cv::Scalar Reconstructor::Entropy(const Patch& p)
 		if (p2 != 0)
 			e.val[2] += -p2*log10(p2);
 	}
+
+	Entropy0 = e[0];
+	Entropy1 = e[1];
+	Entropy2 = e[2];
 
 	return e;
 }

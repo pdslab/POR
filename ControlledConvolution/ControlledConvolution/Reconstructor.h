@@ -11,6 +11,7 @@ enum class MeasureType {hist, l1Norm, l2Norm, hammingNorm,channel0Entropy, chann
 class Reconstructor
 {
 public:
+	static float Hist0, Hist1, Hist2, Entropy0, Entropy1, Entropy2;
 	static bool CompareDouble(const double i, const double j) { return (i < j); }
 	double L1Norm(const Patch &p1, const Patch &p2) const;
 	static double L2Norm(const Patch &p1, const Patch &p2);
@@ -26,7 +27,6 @@ public:
 #pragma region operators
 	void SortPatches(const Sample *s, MeasureType t);
 	bool SortPatches(vector<Patch>& v, MeasureType t) const;
-	void SortPatches(vector<Patch> &v, MeasureType t, bool verbos) const;
 	static void Stitch(Sample  *v);
 	static void Reconstruct(Sample *s);
 	static bool CompareUsingAverageEntropy(const Patch& p1, const Patch& p2);
