@@ -19,9 +19,24 @@ double Reconstructor::HammingNorm(const Patch& p1, const Patch& p2)
 	return cv::norm(p1.GetMat(), p2.GetMat(), NORM_HAMMING);
 }
 
-double Reconstructor::PeakSignalToNoiseRatio(const Patch & p)
+double Reconstructor::PeakSignalToNoiseRatio(const Patch &p1, const Patch &p2)
 {
-	return 0.0;
+	cv::Mat s1;
+
+	absdiff(p1.GetMat(), p2.GetMat(), s1); //|p1-p2|
+	s1.convertTo(s1, CV_32F);
+
+	s1 = s1.mul(s1); //|p1-p2|^2
+
+	const auto s = sum(s1);
+
+	const auto sse = s.val[0] + s.val[1] + s.val[2];
+	//if (sse <= 1e-10) return 0; //Too small return 0
+
+	const auto mse = sse / static_cast<double>(p1.GetMat().channels()) * p1.GetMat().total(); //mean squred error 
+	const auto psnr = 10.0*log10((255 * 255) / mse); //peaksignal to noise ratio In case of a simple single byte image per pixel per channel this is 255
+
+	return psnr;
 }
 
 cv::Scalar Reconstructor::Entropy(const Patch& p)
@@ -80,11 +95,12 @@ cv::Scalar Reconstructor::Entropy(const Patch& p)
 			e.val[2] += -p2*log10(p2);
 	}
 
-	Entropy0 = e[0];
-	Entropy1 = e[1];
-	Entropy2 = e[2];
-
 	return e;
+}
+
+double Reconstructor::JointEntropy(const Patch & p1, const Patch & p2)
+{
+	return 0.0;
 }
 
 double Reconstructor::MutualInformation(const Patch & p1, const Patch & p2)
@@ -92,9 +108,51 @@ double Reconstructor::MutualInformation(const Patch & p1, const Patch & p2)
 	return 0.0;
 }
 
-double Reconstructor::Histogram(const Patch & p1)
+cv::Scalar Reconstructor::StructuralSimilarityIndex(const Patch& p1, const Patch& p2)
 {
-	return 0.0;
+	const double C1 = 6.5025, C2 = 58.5225;
+	const auto d = CV_32F;
+
+	//Init 
+	Mat i1, i2;
+	p1.GetMat().convertTo(i1, d);
+	p2.GetMat().convertTo(i2, d);
+	const auto i1_squred = i1.mul(i1);
+	const auto i2_squred = i2.mul(i2);
+	const auto i1_i2 = i1.mul(i2); // i1 * i2
+	//Preliminary computing 
+	Mat mu1, mu2;
+	
+	GaussianBlur(i1, mu1, Size(11, 11), 1.5);
+	GaussianBlur(i2, mu2, Size(11, 11), 1.5);
+
+	const Mat mu1_squared = mu1.mul(mu1);
+	const Mat mu2_squared = mu2.mul(mu2);
+	const Mat mu1_mu2= mu1.mul(mu2);
+
+	Mat sigma1_2, sigma2_2;
+	const Mat sigma12;
+	GaussianBlur(i1_squred, sigma1_2, Size(11, 11), 1.5);
+	sigma1_2 -= mu1_squared;
+
+	GaussianBlur(i2_squred, sigma2_2, Size(11, 11), 1.5);
+	sigma2_2 -= mu2_squared;
+
+	//Formula 
+	Mat t1 = 2 * mu1_mu2 + C1;
+	Mat t2 = 2 * sigma12 + C2;
+	const Mat t3 = t1.mul(t2); // t3 = ((2*mu1_mu2 + C1).*(2*sigma12 + C2))
+
+	t1 = mu1_squared + mu2_squared + C1;
+	t2 = sigma1_2 + sigma2_2 + C2; 
+	t1 = t1.mul(t2);  // t1 =((mu1_2 + mu2_2 + C1).*(sigma1_2 + sigma2_2 + C2))
+
+	Mat ssimMap;
+	divide(t3, t1, ssimMap); // ssim_map =  t3./t1;
+
+	auto mssim = mean(ssimMap); // mssim = average of ssim map
+
+	return mssim;
 }
 
 Reconstructor::Reconstructor() : sample_(nullptr)
@@ -108,8 +166,7 @@ Reconstructor::Reconstructor(Sample* s)
 }
 
 Reconstructor::~Reconstructor()
-{
-}
+= default;
 
 void Reconstructor::SortPatches(const Sample *s, const MeasureType t)
 {
@@ -125,7 +182,7 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t) const
 	v[0].SetName("0");
 	auto lastSmallestNorm = 10e100;
 	Patch mostSimiarPatch;
-	auto norm1 = 0.0, norm2 = 0.0;
+	auto norm1 = 0.0, norm2 = 0.0, psnr1=0.0, psnr2=0.0;
 
 	//cout << "Sorting patches, size = "<<v.size() << endl;
 
@@ -164,7 +221,7 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t) const
 		return true;
 	}
 
-	if (t == MeasureType::l1Norm || t == MeasureType::l2Norm || t == MeasureType::hammingNorm)
+	if (t == MeasureType::l1Norm || t == MeasureType::l2Norm || t == MeasureType::hammingNorm || t==MeasureType::psnr)
 	{
 		for (auto i = 0; i <= v.size() - 1; i++)
 		{
@@ -175,34 +232,67 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t) const
 				case MeasureType::l1Norm:
 					norm1 = L1Norm(v[i], v[j]);
 					norm2 = L1Norm(v[j], v[j + 1]);
+					if (norm1 != 0 && norm2 != 0)
+					{
+						if (norm1 > norm2)
+						{
+							lastSmallestNorm = norm2;
+							v[j + 1].SetName(to_string(j));
+							std::swap(v[j], v[j + 1]);
+							p0 = v[j + 1];
+						}
+						else if (norm1 < norm2)
+						{
+							p0 = v[j];
+							v[j].SetName(to_string(j));
+						}
+					}
 					break;
 				case MeasureType::l2Norm:
 					norm1 = L2Norm(v[i], v[j]);
 					norm2 = L2Norm(v[j], v[j + 1]);
+					if (norm1 != 0 && norm2 != 0)
+					{
+						if (norm1 > norm2)
+						{
+							lastSmallestNorm = norm2;
+							v[j + 1].SetName(to_string(j));
+							std::swap(v[j], v[j + 1]);
+							p0 = v[j + 1];
+						}
+						else if (norm1 < norm2)
+						{
+							p0 = v[j];
+							v[j].SetName(to_string(j));
+						}
+					}
 					break;
 				case MeasureType::hammingNorm:
 					norm1 = HammingNorm(v[i], v[j]);
 					norm2 = HammingNorm(v[j], v[j + 1]);
 					break;
-				default: break;
-				}
-				/*const auto currentNorm = L2Norm(v[i], v[j]);
-				const auto currentNorm2 = L2Norm(v[i], v[j + 1]);*/
+				case MeasureType::psnr:
+					psnr1 = PeakSignalToNoiseRatio(v[i], v[j]);
+					psnr2 = PeakSignalToNoiseRatio(v[j], v[j+1]);
+					if (psnr1 != 0 && psnr2!= 0)
+					{
+						if (psnr1 > psnr2)
+						{
+							lastSmallestNorm = psnr2;
+							v[j + 1].SetName(to_string(j));
+							std::swap(v[j], v[j + 1]);
+							p0 = v[j + 1];
+						}
+						else if (psnr1 < psnr2)
+						{
+							p0 = v[j];
+							v[j].SetName(to_string(j));
+						}
+					}
+					break;
+				case MeasureType::ssimAverage:
 
-				if (norm1 != 0 && norm2 != 0)
-				{
-					if (norm1 > norm2)
-					{
-						lastSmallestNorm = norm2;
-						v[j + 1].SetName(to_string(j));
-						std::swap(v[j], v[j + 1]);
-						p0 = v[j + 1];
-					}
-					else if (norm1 < norm2)
-					{
-						p0 = v[j];
-						v[j].SetName(to_string(j));
-					}
+				default: break;
 				}
 			}
 		}
@@ -228,7 +318,7 @@ void Reconstructor::Stitch(Sample* s)
 	if (status != Stitcher::OK)
 	{
 		cout << "Can't stitch images, error code = " << int(status) << endl;
-		throw "Can't stitch images, error code ";
+		throw exception("Can't stitch images, error code ");
 	}
 
 	Mat resized;
@@ -279,14 +369,39 @@ bool Reconstructor::CompareUsingChannel2Entropy(const Patch & p1, const Patch & 
 	return entropy1 > entropy2;
 }
 
-void Reconstructor::VisualizePatches(const int& howMany) const
+bool Reconstructor::GreaterThan(const double i, const double j)
+{
+	return (i > j);
+}
+
+bool Reconstructor::GreaterThan(const float i, const float j)
+{
+	return (i > j);
+}
+
+void Reconstructor::SetSample(Sample* s)
+{
+	sample_ = s;
+}
+
+void Reconstructor::SetPatchZero(const Patch& p)
+{
+	patch_zero_ = p;
+}
+
+Patch Reconstructor::GetPatchZero() const
+{
+	return patch_zero_;
+}
+
+void Reconstructor::VisualizePatches(const int& numberToVisualize) const
 {
 	//(void)((!!(howMany <= 12)) || (_wassert(_CRT_WIDE("howMany <= 12"), _CRT_WIDE(__FILE__), static_cast<unsigned>(__LINE__)), 0));
 
 	auto p = sample_->Patches();
 	std::string  title;
 
-	switch (howMany)
+	switch (numberToVisualize)
 	{
 	case 1:
 		Common::Show(p[0].GetMat(), "Patch 0");

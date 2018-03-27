@@ -165,7 +165,7 @@ int main(const int argc, char** argv)
 
 	cv::TickMeter tm;
 	tm.start();
-	for (const auto sample : samples)
+	for (const auto& sample : samples)
 	{
 		counter++;
 		const string title = "Original Image";
@@ -222,21 +222,29 @@ int main(const int argc, char** argv)
 		if (measure == "l1Norm" || measure == "l1norm") mt = MeasureType::l1Norm;
 		else if (measure == "l2norm" || measure == "l2Norm") mt = MeasureType::l2Norm;
 		else if (measure == "hamming" || measure == "hamming") mt = MeasureType::hammingNorm;
-		else if (measure == "c0e" || measure == "channel0entropy") mt = MeasureType::channel0Entropy;
-		else if (measure == "c1e" || measure == "channel1entropy") mt = MeasureType::channel1Entropy;
-		else if (measure == "c2e" || measure == "channel2entropy") mt = MeasureType::channel2Entropy;
-		else if (measure == "ae" || measure == "averageentropy") mt = MeasureType::averageEntropy;
+		else if (measure == "c0e" || measure == "channel0_entropy") mt = MeasureType::channel0Entropy;
+		else if (measure == "c1e" || measure == "channel1_entropy") mt = MeasureType::channel1Entropy;
+		else if (measure == "c2e" || measure == "channel2_entropy") mt = MeasureType::channel2Entropy;
+		else if (measure == "ae" || measure == "average_entropy") mt = MeasureType::averageEntropy;
+		else if (measure == "psnr" || measure == "Psnr") mt = MeasureType::psnr;
+		else if (measure == "ssim" || measure == "ssim_average") mt = MeasureType::ssimAverage;
+		else if (measure == "ssim0" || measure == "channel0_ssim") mt = MeasureType::ssim0;
+		else if (measure == "ssim1" || measure == "channel1_ssim") mt = MeasureType::ssim1;
+		else if (measure == "ssim2" || measure == "channel2_ssim") mt = MeasureType::ssim2;
 		else
 		{
 			cerr << "Exit code: -4, Unknown measure type. Aborting ...\n";
 			return -4;
 		}
 
-		sampleReconstructor.SortPatches(patches, mt);
-		s->SetSortedSamplePatches(patches);
-		const auto outputDir = oDir + "\\" + measure + "\\" + s->BaseName();
-		CreateDirecoty(outputDir);
-		s->SaveToDisc(outputDir, format);
+		if (sampleReconstructor.SortPatches(patches, mt))
+		{
+			s->SetSortedSamplePatches(patches);
+			const auto outputDir = oDir + "\\" + measure + "\\" + s->BaseName();
+			CreateDirecoty(outputDir);
+			s->SaveToDisc(outputDir, format);
+		}
+		else { throw exception("SortPatches failed, unable to save sorted patches"); }
 		ts.stop();
 
 		cout << "] 100%, Time = "<<ts.getTimeMilli()<<" ms\n";
