@@ -84,6 +84,21 @@ const char* file_name_default = "retina_256_256.jpg";
 const int MAX_NAME_DEFAULT = 1024;
 #pragma endregion
 
+Order DetermineOrder(const int &i)
+{
+	switch(i)
+	{
+	case 0:
+		return Order::increasing;
+	case 1:
+		return Order::decreasing;
+	case 2:
+		return Order::randomShuffle;
+	case -1:
+		return Order::none;
+	default: return Order::unknown;
+	}
+}
 int main(const int argc, char** argv)
 {
 	cout << "Starting ...\n";
@@ -96,7 +111,8 @@ int main(const int argc, char** argv)
 		"{x patch_width pw |8| patch width }"
 		"{patch_height ph y   |8| patch height}"
 		"{height h         |32| resize input to this size before processing}"
-		"{width w          |32| resize input to this size before processing}";
+		"{width w          |32| resize input to this size before processing}"
+		"{order |-1| ordering of patches during sorting. Options{0=increasing, 1=decreasing}";
 
 	CommandLineParser parser(argc, argv, keys);
 	parser.about("\nControlled Convoluion (CC) v1.0.0");
@@ -121,11 +137,12 @@ int main(const int argc, char** argv)
 	const auto patchHeight = parser.get<int>("patch_height");
 	const auto inputHeight = parser.get<int>("height");
 	const auto inputWidth = parser.get<int>("width");
+	const auto order = parser.get<int>("order");
 	auto done = false;
 
 	const fs::path path(iDir);
 
-	if (!fs::exists(path))
+	if (!exists(path))
 	{
 		cerr << "Exit code: -1, Supplied input path \"" << iDir << "\"doesn't exist\n";
 		parser.printMessage();
@@ -139,7 +156,7 @@ int main(const int argc, char** argv)
 
 	auto samples = GetSampleSet(iDir);
 
-	if (samples.size() == 0)
+	if (samples.empty())
 	{
 		cerr << "Exit code: -3, Directory contains no samples.\n";
 		return -3;
@@ -219,6 +236,7 @@ int main(const int argc, char** argv)
 		Reconstructor sampleReconstructor;
 		sampleReconstructor.SetSample(s);
 		MeasureType mt = {};
+		auto o = Order::none;
 		if (measure == "l1Norm" || measure == "l1norm") mt = MeasureType::l1Norm;
 		else if (measure == "l2norm" || measure == "l2Norm") mt = MeasureType::l2Norm;
 		else if (measure == "hamming" || measure == "hamming") mt = MeasureType::hammingNorm;
@@ -237,7 +255,8 @@ int main(const int argc, char** argv)
 			return -4;
 		}
 
-		if (sampleReconstructor.SortPatches(patches, mt))
+		o = DetermineOrder(order);
+		if (sampleReconstructor.SortPatches(patches, mt,o))
 		{
 			s->SetSortedSamplePatches(patches);
 			const auto outputDir = oDir + "\\" + measure + "\\" + s->BaseName();

@@ -110,7 +110,7 @@ double Reconstructor::MutualInformation(const Patch & p1, const Patch & p2)
 
 cv::Scalar Reconstructor::StructuralSimilarityIndex(const Patch& p1, const Patch& p2)
 {
-	const double C1 = 6.5025, C2 = 58.5225;
+	const double c1 = 6.5025, c2 = 58.5225;
 	const auto d = CV_32F;
 
 	//Init 
@@ -128,7 +128,7 @@ cv::Scalar Reconstructor::StructuralSimilarityIndex(const Patch& p1, const Patch
 
 	const Mat mu1_squared = mu1.mul(mu1);
 	const Mat mu2_squared = mu2.mul(mu2);
-	const Mat mu1_mu2= mu1.mul(mu2);
+	const Mat mu1Mu2= mu1.mul(mu2);
 
 	Mat sigma1_2, sigma2_2;
 	const Mat sigma12;
@@ -139,12 +139,12 @@ cv::Scalar Reconstructor::StructuralSimilarityIndex(const Patch& p1, const Patch
 	sigma2_2 -= mu2_squared;
 
 	//Formula 
-	Mat t1 = 2 * mu1_mu2 + C1;
-	Mat t2 = 2 * sigma12 + C2;
+	Mat t1 = 2 * mu1Mu2 + c1;
+	Mat t2 = 2 * sigma12 + c2;
 	const Mat t3 = t1.mul(t2); // t3 = ((2*mu1_mu2 + C1).*(2*sigma12 + C2))
 
-	t1 = mu1_squared + mu2_squared + C1;
-	t2 = sigma1_2 + sigma2_2 + C2; 
+	t1 = mu1_squared + mu2_squared + c1;
+	t2 = sigma1_2 + sigma2_2 + c2; 
 	t1 = t1.mul(t2);  // t1 =((mu1_2 + mu2_2 + C1).*(sigma1_2 + sigma2_2 + C2))
 
 	Mat ssimMap;
@@ -176,19 +176,21 @@ void Reconstructor::SortPatches(const Sample *s, const MeasureType t)
 		if (t == MeasureType::l2Norm) std::sort(patches.begin(), patches.end(), L2Norm);
 }
 
-bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t) const
+bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Order& order=Order::none) const
 {
 	auto p0 = v[0];
-	v[0].SetName("0");
-	auto lastSmallestNorm = 10e100;
 	Patch mostSimiarPatch;
-	auto norm1 = 0.0, norm2 = 0.0, psnr1=0.0, psnr2=0.0;
+	v[0].SetName("0");
+	auto lastSmallestNorm = 10e100, norm1 = 0.0, norm2 = 0.0, psnr1 = 0.0, psnr2 = 0.0, ssim1=0.0, ssim2=0.0;
 
 	//cout << "Sorting patches, size = "<<v.size() << endl;
 
 	if (t == MeasureType::averageEntropy)
 	{
-		std::sort(v.begin(), v.end(), CompareUsingAverageEntropy);
+		if(order == Order::increasing)
+			std::sort(v.begin(), v.end(), AverageEntropyAscending);
+		else 
+			std::sort(v.begin(), v.end(), AverageEntropyDescending);
 		for (auto i = 0; i < v.size(); i++)
 			v[i].SetName(to_string(i));
 
@@ -196,7 +198,10 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t) const
 	}
 	if (t == MeasureType::channel0Entropy)
 	{
-		std::sort(v.begin(), v.end(), CompareUsingChannel0Entropy);
+		if (order == Order::increasing)
+			std::sort(v.begin(), v.end(), Channel0EntropyAscending);
+		else 
+			std::sort(v.begin(), v.end(), Channel0EntropyDescending);
 		for (auto i = 0; i < v.size(); i++)
 			v[i].SetName(to_string(i));
 
@@ -205,7 +210,10 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t) const
 
 	if (t == MeasureType::channel1Entropy)
 	{
-		std::sort(v.begin(), v.end(), CompareUsingChannel1Entropy);
+		if (order == Order::increasing)
+			std::sort(v.begin(), v.end(), Channel1EntropyAscending);
+		else 
+			std::sort(v.begin(), v.end(), Channel1EntropyDescending);
 		for (auto i = 0; i < v.size(); i++)
 			v[i].SetName(to_string(i));
 
@@ -214,7 +222,10 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t) const
 
 	if (t == MeasureType::channel2Entropy)
 	{
-		std::sort(v.begin(), v.end(), CompareUsingChannel2Entropy);
+		if (order == Order::increasing)
+			std::sort(v.begin(), v.end(), Channel2EntropyAscending);
+		else
+			std::sort(v.begin(), v.end(), Channel2EntropyDescending);
 		for (auto i = 0; i < v.size(); i++)
 			v[i].SetName(to_string(i));
 
@@ -231,68 +242,146 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t) const
 				{
 				case MeasureType::l1Norm:
 					norm1 = L1Norm(v[i], v[j]);
-					norm2 = L1Norm(v[j], v[j + 1]);
+					norm2 = L1Norm(v[i], v[j + 1]);
 					if (norm1 != 0 && norm2 != 0)
 					{
 						if (norm1 > norm2)
 						{
-							lastSmallestNorm = norm2;
 							v[j + 1].SetName(to_string(j));
 							std::swap(v[j], v[j + 1]);
-							p0 = v[j + 1];
 						}
 						else if (norm1 < norm2)
 						{
-							p0 = v[j];
 							v[j].SetName(to_string(j));
 						}
 					}
 					break;
 				case MeasureType::l2Norm:
 					norm1 = L2Norm(v[i], v[j]);
-					norm2 = L2Norm(v[j], v[j + 1]);
+					norm2 = L2Norm(v[i], v[j + 1]);
 					if (norm1 != 0 && norm2 != 0)
 					{
 						if (norm1 > norm2)
 						{
-							lastSmallestNorm = norm2;
 							v[j + 1].SetName(to_string(j));
 							std::swap(v[j], v[j + 1]);
-							p0 = v[j + 1];
 						}
 						else if (norm1 < norm2)
 						{
-							p0 = v[j];
 							v[j].SetName(to_string(j));
 						}
 					}
 					break;
 				case MeasureType::hammingNorm:
 					norm1 = HammingNorm(v[i], v[j]);
-					norm2 = HammingNorm(v[j], v[j + 1]);
+					norm2 = HammingNorm(v[i], v[j + 1]);
+					if (norm1 != 0 && norm2 != 0)
+					{
+						if (norm1 > norm2)
+						{
+							v[j + 1].SetName(to_string(j));
+							std::swap(v[j], v[j + 1]);
+						}
+						else if (norm1 < norm2)
+						{
+							v[j].SetName(to_string(j));
+						}
+					}
 					break;
 				case MeasureType::psnr:
 					psnr1 = PeakSignalToNoiseRatio(v[i], v[j]);
-					psnr2 = PeakSignalToNoiseRatio(v[j], v[j+1]);
+					psnr2 = PeakSignalToNoiseRatio(v[i], v[j+1]);
 					if (psnr1 != 0 && psnr2!= 0)
 					{
 						if (psnr1 > psnr2)
 						{
-							lastSmallestNorm = psnr2;
 							v[j + 1].SetName(to_string(j));
 							std::swap(v[j], v[j + 1]);
-							p0 = v[j + 1];
 						}
 						else if (psnr1 < psnr2)
 						{
-							p0 = v[j];
 							v[j].SetName(to_string(j));
 						}
 					}
 					break;
 				case MeasureType::ssimAverage:
+					ssim1 = static_cast<double>(StructuralSimilarityIndex(v[i], v[j])[0] + StructuralSimilarityIndex(v[i], v[j])[1] +
+						StructuralSimilarityIndex(v[i], v[j])[2])/3.0;
+					ssim2 = static_cast<double>(StructuralSimilarityIndex(v[i], v[j + 1])[0] + StructuralSimilarityIndex(v[i], v[j + 1])[1] +
+						StructuralSimilarityIndex(v[i], v[j + 1])[2]) / 3.0;
+					if (ssim1 == ssim2)
+					{
+						v[j + 1].SetName(to_string(j + 1));
+						v[j].SetName(to_string(j));
+					}
+					else if(ssim1 > ssim2)
+					{
+						v[j + 1].SetName(to_string(j));
+						std::swap(v[j], v[j + 1]);
+					}
+					else if (ssim1 < ssim2)
+					{
+						v[j].SetName(to_string(j));
+					}
+					break;
 
-				default: break;
+				case MeasureType::ssim0:
+					ssim1 = static_cast<double>(StructuralSimilarityIndex(v[i], v[j])[0]);
+					ssim2 = static_cast<double>(StructuralSimilarityIndex(v[i], v[j + 1])[0]);
+					if (ssim1 == ssim2)
+					{
+						v[j + 1].SetName(to_string(j + 1));
+						v[j].SetName(to_string(j));
+					}
+					else if (ssim1 > ssim2)
+					{
+						v[j + 1].SetName(to_string(j));
+						std::swap(v[j], v[j + 1]);
+					}
+					else if (ssim1 < ssim2)
+					{
+						v[j].SetName(to_string(j));
+					}
+					break;
+				case MeasureType::ssim1:
+					ssim1 = static_cast<double>(StructuralSimilarityIndex(v[i], v[j])[1]);
+					ssim2 = static_cast<double>(StructuralSimilarityIndex(v[i], v[j + 1])[1]);
+					if (ssim1 == ssim2)
+					{
+						v[j + 1].SetName(to_string(j+1));
+						v[j].SetName(to_string(j));
+					}
+					else if (ssim1 > ssim2)
+					{
+						v[j + 1].SetName(to_string(j));
+						std::swap(v[j], v[j + 1]);
+					}
+					else if (ssim1 < ssim2)
+					{
+						v[j].SetName(to_string(j));
+					}
+					break;
+				case MeasureType::ssim2:
+					ssim1 = static_cast<double>(StructuralSimilarityIndex(v[i], v[j])[2]);
+					ssim2 = static_cast<double>(StructuralSimilarityIndex(v[i], v[j + 1])[2]);
+					if (ssim1 == ssim2)
+					{
+						v[j + 1].SetName(to_string(j + 1));
+						v[j].SetName(to_string(j));
+					}
+					else if (ssim1 > ssim2)
+					{
+						v[j + 1].SetName(to_string(j));
+						std::swap(v[j], v[j + 1]);
+					}
+					else if (ssim1 < ssim2)
+					{
+						v[j].SetName(to_string(j));
+					}
+					break;
+				default:
+					cerr << "Unknown measure type!\n";
+					break;
 				}
 			}
 		}
@@ -335,38 +424,86 @@ void Reconstructor::Reconstruct(Sample* s)
 	Common::Show(reconstructedOutput, "");
 }
 
-bool Reconstructor::CompareUsingAverageEntropy(const Patch& p1, const Patch& p2)
+bool Reconstructor::AverageEntropy(const Patch& p1, const Patch& p2, Order& order)
 {
 	auto entropy1 = Entropy(p1);
 	auto entropy2 = Entropy(p2);
 	const float e1 = (entropy1[0] + entropy1[1] + entropy1[2]) / 3.0;
 	const float e2 = (entropy2[0] + entropy2[1] + entropy2[2]) / 3.0;
 
-	return e1 > e2;
+	return (e1 > e2) ? order == Order::decreasing : (e1 < e2);
 }
 
-bool Reconstructor::CompareUsingChannel0Entropy(const Patch& p1, const Patch& p2)
+bool Reconstructor::AverageEntropyAscending(const Patch & p1, const Patch & p2)
+{
+	auto o = Order::increasing;
+	return AverageEntropy(p1, p2, o);
+}
+
+bool Reconstructor::AverageEntropyDescending(const Patch & p1, const Patch & p2)
+{
+	auto o = Order::decreasing;
+	return AverageEntropy(p1, p2, o);
+}
+
+bool Reconstructor::Channel0Entropy(const Patch& p1, const Patch& p2, Order& order)
 {
 	const auto entropy1 = Entropy(p1)[0];
 	const auto entropy2 = Entropy(p2)[0];
 
-	return entropy1 > entropy2;
+	return (entropy1 > entropy2) ? order == Order::decreasing : entropy1 < entropy2;
 }
 
-bool Reconstructor::CompareUsingChannel1Entropy(const Patch & p1, const Patch & p2)
+bool Reconstructor::Channel0EntropyAscending(const Patch & p1, const Patch & p2)
+{
+	auto o = Order::increasing;
+	return Channel0Entropy(p1, p2, o);
+}
+
+bool Reconstructor::Channel0EntropyDescending(const Patch & p1, const Patch & p2)
+{
+	auto o = Order::decreasing;
+	return Channel0Entropy(p1, p2, o);
+}
+
+bool Reconstructor::Channel1Entropy(const Patch & p1, const Patch & p2, Order& order)
 {
 	const auto entropy1 = Entropy(p1)[1];
 	const auto entropy2 = Entropy(p2)[1];
 
-	return entropy1 > entropy2;;
+	return (entropy1 > entropy2) ? order == Order::decreasing : entropy1 < entropy2;
 }
 
-bool Reconstructor::CompareUsingChannel2Entropy(const Patch & p1, const Patch & p2)
+bool Reconstructor::Channel1EntropyAscending(const Patch & p1, const Patch & p2)
+{
+	auto o = Order::increasing;
+	return Channel1Entropy(p1, p2, o);
+}
+
+bool Reconstructor::Channel1EntropyDescending(const Patch & p1, const Patch & p2)
+{
+	auto o = Order::decreasing;
+	return Channel1Entropy(p1, p2, o);
+}
+
+bool Reconstructor::Channel2Entropy(const Patch & p1, const Patch & p2, Order& order)
 {
 	const auto entropy1 = Entropy(p1)[2];
 	const auto entropy2 = Entropy(p2)[2];
 
-	return entropy1 > entropy2;
+	return (entropy1 > entropy2) ? order == Order::decreasing : entropy1 < entropy2;
+}
+
+bool Reconstructor::Channel2EntropyAscending(const Patch & p1, const Patch & p2)
+{
+	auto o = Order::increasing;
+	return Channel2Entropy(p1, p2, o);
+}
+
+bool Reconstructor::Channel2EntropyDescending(const Patch & p1, const Patch & p2)
+{
+	auto o = Order::decreasing;
+	return Channel2Entropy(p1,p2,o);
 }
 
 bool Reconstructor::GreaterThan(const double i, const double j)
