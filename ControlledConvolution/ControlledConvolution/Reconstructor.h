@@ -22,6 +22,8 @@ enum class MeasureType
 	ssimAverage,ssim0,ssim1,ssim2
 };
 
+enum class Order {decreasing, increasing, randomShuffle, none, unknown};
+
 class Reconstructor  // NOLINT
 {
 public:
@@ -95,13 +97,22 @@ public:
 
 #pragma region operators
 	void SortPatches(const Sample *s, MeasureType t);
-	bool SortPatches(vector<Patch>& v, MeasureType t) const;
+	//bool SortPatches(vector<Patch>& v, const MeasureType t, const Order& o) const;
+	bool SortPatches(vector<Patch>& v, MeasureType t, const Order &order) const;
 	static void Stitch(Sample  *s);
 	static void Reconstruct(Sample *s);
-	static bool CompareUsingAverageEntropy(const Patch& p1, const Patch& p2);
-	static bool CompareUsingChannel0Entropy(const Patch& p1, const Patch& p2);
-	static bool CompareUsingChannel1Entropy(const Patch& p1, const Patch& p2);
-	static bool CompareUsingChannel2Entropy(const Patch& p1, const Patch& p2);
+	static bool AverageEntropy(const Patch& p1, const Patch& p2, Order& order);
+	static bool AverageEntropyAscending(const Patch& p1, const Patch& p2);
+	static bool AverageEntropyDescending(const Patch& p1, const Patch& p2);
+	static bool Channel0Entropy(const Patch& p1, const Patch& p2, Order& order);
+	static bool Channel0EntropyAscending(const Patch& p1, const Patch& p2);
+	static bool Channel0EntropyDescending(const Patch& p1, const Patch& p2);
+	static bool Channel1Entropy(const Patch& p1, const Patch& p2, Order& order);
+	static bool Channel1EntropyAscending(const Patch& p1, const Patch& p2);
+	static bool Channel1EntropyDescending(const Patch& p1, const Patch& p2);
+	static bool Channel2Entropy(const Patch& p1, const Patch& p2, Order& order);
+	static bool Channel2EntropyAscending(const Patch& p1, const Patch& p2);
+	static bool Channel2EntropyDescending(const Patch& p1, const Patch& p2);
 	static bool GreaterThan(const double i, const double j);
 	static bool GreaterThan(const float i, const float j);
 #pragma endregion
