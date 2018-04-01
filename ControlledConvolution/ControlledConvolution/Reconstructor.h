@@ -51,7 +51,7 @@ public:
 	/// <summary>
 	/// Computes PSNR between two patches.
 	///𝑀𝑆𝐸=  1/(𝑐∗𝑖∗𝑗) ∑〖(𝐼1−𝐼2)〗^2 
-	//𝑃𝑆𝑁𝑅 = 10.log_10⁡〖max_𝐼⁡2 / 𝑀𝑆𝐸〗
+	///𝑃𝑆𝑁𝑅 = 10.log_10⁡〖max_𝐼⁡2 / 𝑀𝑆𝐸〗
 	/// </summary>
 	/// <param name="p1">The p1.</param>
 	/// <param name="p2">The p2.</param>

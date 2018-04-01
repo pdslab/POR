@@ -91,12 +91,12 @@ if __name__ == '__main__':
     parser.add_argument(
         '--patch_dir',
         type=str,
-        default='D:\\Google Drive\\Data\\CatsVsDogs\\test\\test-patches\\l1norm'
+        default='D:\\Google Drive\\Data\\CatsVsDogs\\train\\train-patches\\ae'
     )
     parser.add_argument(
         '--recon_output_dir', 
         type=str,
-        default='D:\\Google Drive\\Data\\CatsVsDogs\\test\\cc-test\\l1norm'
+        default='D:\\Google Drive\\Data\\CatsVsDogs\\train\\cc-train\\ae'
     )
     parser.add_argument(
         '--random_shuffle_patches',
