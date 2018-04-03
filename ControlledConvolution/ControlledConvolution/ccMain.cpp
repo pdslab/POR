@@ -99,6 +99,21 @@ Order DetermineOrder(const int &i)
 	default: return Order::unknown;
 	}
 }
+
+static string ToString(const Order & order)
+{
+	switch(order)
+	{
+	case Order::increasing:
+		return "increasing";
+	case Order::decreasing:
+		return "decreasing";
+	case Order::none:
+		return "none";
+	default: return "UnknownOrder";
+	}
+}
+
 int main(const int argc, char** argv)
 {
 	cout << "Starting ...\n";
@@ -112,8 +127,7 @@ int main(const int argc, char** argv)
 		"{patch_height ph y   |8| patch height}"
 		"{height h         |32| resize input to this size before processing}"
 		"{width w          |32| resize input to this size before processing}"
-		"{order |-1| ordering of patches during sorting. Options{0=increasing, 1=decreasing}";
-
+		"{order |-1| ordering of patches during sorting. Options(0=increasing, 1=decreasing)}";
 	CommandLineParser parser(argc, argv, keys);
 	parser.about("\nControlled Convoluion (CC) v1.0.0");
 
@@ -166,6 +180,7 @@ int main(const int argc, char** argv)
 		<< "\tDataset directory | " << iDir << endl
 		<< "\tOutput directory  | " << oDir << endl
 		<< "\tMeasure           | " << measure << endl
+		<< "\tOrder				| " << order<< endl
 		<< "\tWidth		        | " << patchWidth << endl
 		<< "\tHeight		    | " << patchHeight << endl
 		<< "\tNumber of Samples | " << samples.size() << endl;
@@ -259,7 +274,7 @@ int main(const int argc, char** argv)
 		if (sampleReconstructor.SortPatches(patches, mt,o))
 		{
 			s->SetSortedSamplePatches(patches);
-			const auto outputDir = oDir + "\\" + measure + "\\" + s->BaseName();
+			const auto outputDir = oDir + "\\" + measure + "\\" + ToString(o) + "\\"+ s->BaseName();
 			CreateDirecoty(outputDir);
 			s->SaveToDisc(outputDir, format);
 		}
