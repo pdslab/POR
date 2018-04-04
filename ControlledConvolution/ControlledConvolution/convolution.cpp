@@ -6,7 +6,7 @@
 // 1D convolution
 // We assume Sample and kernel signal start from t=0.
 ///////////////////////////////////////////////////////////////////////////////
-bool Convolve1D(float* in, float* out, const int data_size, float* kernel, const int kernel_size)
+bool Convolution::Convolve1D(float* in, float* out, const int data_size, float* kernel, const int kernel_size)
 {
 	int i, j, k;
 
@@ -37,7 +37,7 @@ bool Convolve1D(float* in, float* out, const int data_size, float* kernel, const
 
 // Simplest 2D convolution routine. It is easy to understand how convolution
 // works, but is very slow, because of no optimization.
-bool Convolve2DSlow(unsigned char* in, unsigned char* out, const int data_size_x, const int data_size_y,
+bool Convolution::Convolve2DSlow(unsigned char* in, unsigned char* out, const int data_size_x, const int data_size_y,
 	float* kernel, const int kernel_size_x, const int kernel_size_y)
 {
 	// check validity of params
@@ -86,7 +86,7 @@ bool Convolve2DSlow(unsigned char* in, unsigned char* out, const int data_size_x
 // pointer indexing in order to minimize the number of multiplications.
 
 // unsigned char version (8bit): Note that the output is always positive number
-bool Convolve_2D(unsigned char* in, unsigned char* out, const int data_size_x, const int data_size_y,
+bool Convolution::Convolve2D(unsigned char* in, unsigned char* out, const int data_size_x, const int data_size_y,
 	float* kernel, const int kernel_size_x, const int kernel_size_y)
 {
 	unsigned char *inPtr2;
@@ -154,7 +154,7 @@ bool Convolve_2D(unsigned char* in, unsigned char* out, const int data_size_x, c
 }
 
 // unsigned short (16bit)
-bool Convolve_2D(unsigned short* in, unsigned short* out, const int data_size_x, const int data_size_y,
+bool Convolution::Convolve2D(unsigned short* in, unsigned short* out, const int data_size_x, const int data_size_y,
 	float* kernel, const int kernel_size_x, const int kernel_size_y)
 {
 	unsigned short *in_ptr2;
@@ -222,7 +222,7 @@ bool Convolve_2D(unsigned short* in, unsigned short* out, const int data_size_x,
 }
 
 // signed integer (32bit) version:
-bool Convolve_2D(int* in, int* out, const int dataSizeX, const int dataSizeY,
+bool Convolution::Convolve2D(int* in, int* out, const int dataSizeX, const int dataSizeY,
 	float* kernel, const int kernelSizeX, const int kernelSizeY)
 {
 	int *inPtr2;
@@ -291,7 +291,7 @@ bool Convolve_2D(int* in, int* out, const int dataSizeX, const int dataSizeY,
 }
 
 // single float precision version:
-bool Convolve_2D(float* in, float* out, const int dataSizeX, const int dataSizeY,
+bool Convolution::Convolve2D(float* in, float* out, const int dataSizeX, const int dataSizeY,
 	float* kernel, const int kernelSizeX, const int kernelSizeY)
 {
 	float *inPtr2;
@@ -355,7 +355,7 @@ bool Convolve_2D(float* in, float* out, const int dataSizeX, const int dataSizeY
 }
 
 // double float precision version:
-bool Convolve_2D(double* in, double* out, const int dataSizeX, const int dataSizeY,
+bool Convolution::Convolve2D(double* in, double* out, const int dataSizeX, const int dataSizeY,
 	double* kernel, const int kernelSizeX, const int kernelSizeY)
 {
 	double *inPtr2;
@@ -426,7 +426,7 @@ bool Convolve_2D(double* in, double* out, const int dataSizeX, const int dataSiz
 // larger than max.
 
 // unsigned char (8-bit) version
-bool convolve_2d_separable(unsigned char* in, unsigned char* out, int dataSizeX, int dataSizeY,
+bool Convolution::Convolve2DSeparable(unsigned char* in, unsigned char* out, int dataSizeX, int dataSizeY,
 	float* kernelX, int kSizeX, float* kernelY, int kSizeY)
 {
 	int i, j, k, m, n;
@@ -609,7 +609,7 @@ bool convolve_2d_separable(unsigned char* in, unsigned char* out, int dataSizeX,
 ///////////////////////////////////////////////////////////////////////////////
 // unsigned short (16-bit) version
 ///////////////////////////////////////////////////////////////////////////////
-bool convolve_2d_separable(unsigned short* in, unsigned short* out, int dataSizeX, int dataSizeY,
+bool Convolution::Convolve2DSeparable(unsigned short* in, unsigned short* out, int dataSizeX, int dataSizeY,
 	float* kernelX, int kSizeX, float* kernelY, int kSizeY)
 {
 	int i, j, k, m, n;
@@ -792,7 +792,7 @@ bool convolve_2d_separable(unsigned short* in, unsigned short* out, int dataSize
 ///////////////////////////////////////////////////////////////////////////////
 // integer (32-bit) version
 ///////////////////////////////////////////////////////////////////////////////
-bool convolve_2d_separable(int* in, int* out, int dataSizeX, int dataSizeY,
+bool Convolution::Convolve2DSeparable(int* in, int* out, int dataSizeX, int dataSizeY,
 	float* kernelX, int kSizeX, float* kernelY, int kSizeY)
 {
 	int i, j, k, m, n;
@@ -982,7 +982,7 @@ bool convolve_2d_separable(int* in, int* out, int dataSizeX, int dataSizeY,
 ///////////////////////////////////////////////////////////////////////////////
 // single precision float version
 ///////////////////////////////////////////////////////////////////////////////
-bool convolve_2d_separable(float* in, float* out, int dataSizeX, int dataSizeY,
+bool Convolution::Convolve2DSeparable(float* in, float* out, int dataSizeX, int dataSizeY,
 	float* kernelX, int kSizeX, float* kernelY, int kSizeY)
 {
 	int i, j, k, m, n;
@@ -1159,17 +1159,17 @@ bool convolve_2d_separable(float* in, float* out, int dataSizeX, int dataSizeY,
 	return true;
 }
 
-bool convolve_2d_separable(double * in, double * out, int sizeX, int sizeY, double * xKernel, int kSizeX, double * yKernel, int kSizeY)
+bool Convolution::Convolve2DSeparable(double * in, double * out, int sizeX, int sizeY, double * xKernel, int kSizeX, double * yKernel, int kSizeY)
 {
 	return false;
 }
 
-bool controlled_convolve_2d_separable(double * in, double * out, int sizeX, int sizeY, double * xKernel, int kSizeX, double * yKernel, int kSizeY)
+bool Convolution::ControlledConvolve2DSeparable(double * in, double * out, int sizeX, int sizeY, double * xKernel, int kSizeX, double * yKernel, int kSizeY)
 {
 	return false;
 }
 
-bool order_by_composition(double * in, double * out, int sizeX, int sizeY, double * xKernel, int kSizeX, double * yKernel, int kSizeY)
+bool Convolution::OrderByComposition(double * in, double * out, int sizeX, int sizeY, double * xKernel, int kSizeX, double * yKernel, int kSizeY)
 {
 	return false;
 }
@@ -1177,7 +1177,7 @@ bool order_by_composition(double * in, double * out, int sizeX, int sizeY, doubl
 ///////////////////////////////////////////////////////////////////////////////
 // double precision float version
 ///////////////////////////////////////////////////////////////////////////////
-bool convolve_2d_separable(double* in, double* out, int dataSizeX, int dataSizeY,
+bool Convolution::Convolve2DSeparable(double* in, double* out, int dataSizeX, int dataSizeY,
 	double* kernelX, int kSizeX, float* kernelY, int kSizeY)
 {
 	int i, j, k, m, n;
@@ -1365,7 +1365,7 @@ bool convolve_2d_separable(double* in, double* out, int dataSizeX, int dataSizeY
 ///////////////////////////////////////////////////////////////////////////////
 // unsigned char (8-bit) version
 ///////////////////////////////////////////////////////////////////////////////
-bool convolve2_d_fast(unsigned char* in, unsigned char* out, int dataSizeX, int dataSizeY,
+bool Convolution::Convolve2DFast(unsigned char* in, unsigned char* out, int dataSizeX, int dataSizeY,
 	float* kernel, int kernelSizeX, int kernelSizeY)
 {
 	int i, j, m, n, x, t;
@@ -1630,7 +1630,7 @@ bool convolve2_d_fast(unsigned char* in, unsigned char* out, int dataSizeX, int 
 // Multiply coefficient(factor) to accumulated sum at last.
 // NOTE: IT IS NOT FASTER THAN FLOAT MULTIPLICATION, TRY YOURSELF!!!
 ///////////////////////////////////////////////////////////////////////////////
-bool convolve2_d_fast2(unsigned char* in, unsigned char* out, int dataSizeX, int dataSizeY,
+bool Convolution::Convolve2DFast2(unsigned char* in, unsigned char* out, int dataSizeX, int dataSizeY,
 	int* kernel, float factor, int kernelSizeX, int kernelSizeY)
 {
 	int i, j, m, n, x, t;

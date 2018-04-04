@@ -20,7 +20,7 @@ string Sample::ExtractPatch(cv::Mat & patch, const Coordinate & c)
 
 	//cout << "Extracting patches ...";
 	//common::show(mat_,"");
-	const int rowBytes = (endColumn - startColumn) * mat_.channels() * mat_.elemSize1();
+	const int rowBytes = static_cast<int>((endColumn - startColumn) * mat_.channels() * mat_.elemSize1());
 	patch.create(endRow - startRow, endColumn - startColumn, mat_.type());
 	auto pixelOriginal = static_cast<const uchar*>(mat_.data) + mat_.step[0] * startRow + mat_.step[1] * startColumn;
 	auto pixelPatch = static_cast<uchar*>(patch.data);

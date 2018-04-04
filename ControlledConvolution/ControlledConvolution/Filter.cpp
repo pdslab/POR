@@ -2,11 +2,11 @@
 #include "filter.h"
 
 
-filter::filter()
+Filter::Filter()
 {
 }
 
 
-filter::~filter()
+Filter::~Filter()
 {
 }

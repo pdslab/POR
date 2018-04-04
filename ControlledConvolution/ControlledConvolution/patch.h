@@ -6,26 +6,26 @@
 #include <list>
 #include <map>
 
-/*A Patch is a unique , 4-tuple subsection of the original input <w,h> identified by its start and end cooridinates 
+/*A Patch is a unique , 4-tuple subsection of the original input <w,h> identified by its start and end cooridinates
  * w = <0,x_end>
  * h = <0,y_end>
  * p = <x0,y0,x1,y1> where 0 <= x0 <= x_end and 0 <= y <= y_end
- * 
+ *
  * Properties:
- * 1. A Patch has a bounding zone (area) 
+ * 1. A Patch has a bounding zone (area)
  * 2. No Patch can intersect any other Patch: P1 intersection P2 <= 1
- * 3. A Patch is unique 
- * 
+ * 3. A Patch is unique
+ *
  */
 
 class Patch
 {
 public:
-	Patch(): start_row_(0), end_row_(0), start_column_(0), end_column_(0), rows_(0), columns_(0), entropy_(0)
+	Patch() : start_row_(0), end_row_(0), start_column_(0), end_column_(0), rows_(0), columns_(0), entropy_(0)
 	{
 	}
 
-	Patch(const int s_row, const int e_row, const int s_col, const int e_col): entropy_(0)
+	Patch(const int s_row, const int e_row, const int s_col, const int e_col) : entropy_(0)
 	{
 		start_row_ = s_row;
 		end_row_ = e_row;
@@ -35,8 +35,8 @@ public:
 		columns_ = end_column_ - start_column_;
 	}
 
-	explicit Patch(const Coordinate c): start_row_(0), end_row_(0), start_column_(0), end_column_(0), rows_(0),
-	                                    columns_(0), entropy_(0)
+	explicit Patch(const Coordinate c) : start_row_(0), end_row_(0), start_column_(0), end_column_(0), rows_(0),
+		columns_(0), entropy_(0)
 	{
 		coo_ = c;
 	}
@@ -49,20 +49,19 @@ public:
 		//delete corrdinates_;
 	}
 
-
-
-#pragma region utils 
+#pragma region utils
 	void SetName(const string &name) { name_ = name; }
 	void WriteToFile(const string& file) const;
 	void Save(const string& path, const string &format) const;
 	void ToPixel();
-#pragma endregion 
+	void SetMat(const cv::Mat& mat) { patch_mat_ = mat; }
+#pragma endregion
 
-#pragma region patch measures 
+#pragma region patch measures
 	void ComputeHisogram();
 	void ComputeEntropy();
 	void ComputeMutualInformationGain();
-#pragma endregion 
+#pragma endregion
 
 #pragma region setters
 	initializer_list<Mat> Hist() const { return patch_histogram_; };
@@ -73,7 +72,7 @@ public:
 	void SetBgrPlanes(vector<Mat> &bgr_planes) { patch_bgr_planes_ = bgr_planes; }
 #pragma endregion
 
-#pragma region getters 
+#pragma region getters
 	Coordinate GetPatchCoordinates() const
 	{
 		return coo_;
@@ -83,7 +82,7 @@ public:
 	Mat GetMat() const { return patch_mat_; }
 	vector<vector<float>> Pixels()const { return patch_pixels_float_; }
 	vector<Mat> BgrPlanes() const { return patch_bgr_planes_; }
-#pragma endregion 
+#pragma endregion
 
 private:
 	vector<vector<float>> ExtractPixels();
@@ -91,7 +90,7 @@ private:
 	int end_row_;
 	int start_column_;
 	int end_column_;
-	int corrdinates_[4] ;
+	int corrdinates_[4];
 	int rows_;
 	int columns_;
 	string file_;
@@ -110,4 +109,3 @@ private:
 };
 
 #endif
-

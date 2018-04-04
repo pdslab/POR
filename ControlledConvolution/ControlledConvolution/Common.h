@@ -2,7 +2,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 #include <opencv2/highgui.hpp>
-
 #include "coordinate.h"
 
 static const std::string PATCH_ROOT_DIR = "../../patches";
@@ -36,6 +35,7 @@ public:
 	static bool GreaterThan(const double u, const double v) { return u > v; }
 	static bool GreaterThan(const float u, const float v) { return u > v; }
 	static bool GreaterThan(const int u, const int v) { return u > v; }
+	static 
 };
 #endif
 

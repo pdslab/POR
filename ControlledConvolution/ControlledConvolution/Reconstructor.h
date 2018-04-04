@@ -15,11 +15,15 @@
 /// </summary>
 enum class MeasureType
 {
-	hist, l1Norm, l2Norm, hammingNorm,
-	channel0Entropy, channel1Entropy, 
-	channel2Entropy, averageEntropy, ji,
-	psnr,mi,
-	ssimAverage,ssim0,ssim1,ssim2
+	hist, l1Norm, l2Norm, 
+	hammingNorm,
+	channel0Entropy, 
+	channel1Entropy, 
+	channel2Entropy, 
+	averageEntropy, ji,
+	psnr,mi,pixel,
+	ssimAverage,ssim0,
+	ssim1,ssim2
 };
 
 enum class Order {decreasing, increasing, randomShuffle, none, unknown};
@@ -99,6 +103,7 @@ public:
 	void SortPatches(const Sample *s, MeasureType t);
 	//bool SortPatches(vector<Patch>& v, const MeasureType t, const Order& o) const;
 	bool SortPatches(vector<Patch>& v, MeasureType t, const Order &order) const;
+	bool SortPixels(Patch* in, const Order& order);
 	static void Stitch(Sample  *s);
 	static void Reconstruct(Sample *s);
 	static bool AverageEntropy(const Patch& p1, const Patch& p2, Order& order);
@@ -115,6 +120,8 @@ public:
 	static bool Channel2EntropyDescending(const Patch& p1, const Patch& p2);
 	static bool GreaterThan(const double i, const double j);
 	static bool GreaterThan(const float i, const float j);
+	static bool LessThan(const double i, const double j) { return (i < j); }
+	static bool LessThan(const float i, const float j) { return (i < j); }
 #pragma endregion
 #pragma region setters and getters
 	void SetSample(Sample* s);
