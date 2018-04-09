@@ -13,7 +13,7 @@ from utils import get_dir_content
 FLAGS = 0
 
 
-def reconstruct_image_from_pactches(patches, output_name):
+def reconstruct(patches, output_name):
     """Reconstruct new sample from reordered patches 
     Arguments:
         patches {list} -- a list of order set of patches
@@ -34,14 +34,14 @@ def reconstruct_image_from_pactches(patches, output_name):
         sys.exit(-1)
 
     # calculate the new image width and height - should match original image
-    horizontal_and_vertical_image_size = math.sqrt(len(patches))
-    new_h = int(patch_width*horizontal_and_vertical_image_size)
-    new_w = int(patch_width*horizontal_and_vertical_image_size)
+    img_size = math.sqrt(len(patches))
+    new_h = int(patch_width*img_size)
+    new_w = int(patch_width*img_size)
 
     print("Total Patches = {}".format(len(patches)))
     print("Patch width, heigh = {}".format(patch_width))
     print("Vertical, horizontal reconstruction strides = {}".format(
-        horizontal_and_vertical_image_size))
+        img_size))
     print("New image, (w,h) = ({},{})".format(new_w, new_h))
 
     # Create place holder for new iamge
@@ -61,7 +61,7 @@ def reconstruct_image_from_pactches(patches, output_name):
         result_image.paste(im=patch, box=(cx*patch_width, cy*patch_width))
         cx += 1
 
-        if cx == horizontal_and_vertical_image_size:
+        if cx == img_size:
             cx = 0
             cy += 1
 
@@ -83,7 +83,7 @@ def main(_):
         patch_dir = os.path.join(FLAGS.patch_dir, patch_dir)
         output_name = os.path.basename(patch_dir)
         patches = list(get_dir_content(patch_dir))
-        reconstruct_image_from_pactches(patches, output_name)
+        reconstruct(patches, output_name)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

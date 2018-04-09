@@ -84,9 +84,9 @@ const char* file_name_default = "retina_256_256.jpg";
 const int MAX_NAME_DEFAULT = 1024;
 #pragma endregion
 
-Order DetermineOrder(const int &i)
+static Order DetermineOrder(const int &i)
 {
-	switch(i)
+	switch (i)
 	{
 	case 0:
 		return Order::increasing;
@@ -102,7 +102,7 @@ Order DetermineOrder(const int &i)
 
 static string ToString(const Order & order)
 {
-	switch(order)
+	switch (order)
 	{
 	case Order::increasing:
 		return "increasing";
@@ -127,7 +127,7 @@ int main(const int argc, char** argv)
 		"{patch_height ph y   |8| patch height}"
 		"{height h         |32| resize input to this size before processing}"
 		"{width w          |32| resize input to this size before processing}"
-		"{order |-1| ordering of patches during sorting. Options(0=increasing, 1=decreasing)}";
+		"{order |-1| ordering of patches during sorting. Options(0=increasing, 1=decreasing, 2=randomShuffle)}";
 	CommandLineParser parser(argc, argv, keys);
 	parser.about("\nControlled Convoluion (CC) v1.0.0");
 
@@ -180,7 +180,7 @@ int main(const int argc, char** argv)
 		<< "\tDataset directory | " << iDir << endl
 		<< "\tOutput directory  | " << oDir << endl
 		<< "\tMeasure           | " << measure << endl
-		<< "\tOrder				| " << order<< endl
+		<< "\tOrder				| " << order << endl
 		<< "\tWidth		        | " << patchWidth << endl
 		<< "\tHeight		    | " << patchHeight << endl
 		<< "\tNumber of Samples | " << samples.size() << endl;
@@ -226,7 +226,7 @@ int main(const int argc, char** argv)
 		s->GeneratePatchProposals(patchSize);
 
 		//Extract patches
-		cout << "Sample "<<counter<<" 0% [";
+		cout << "Sample " << counter << " 0% [";
 		for (const auto& patchCoordinate : s->PatchesCoordinates())
 		{
 			//STEP 3. Extract the patches
@@ -252,6 +252,7 @@ int main(const int argc, char** argv)
 		sampleReconstructor.SetSample(s);
 		MeasureType mt = {};
 		auto o = Order::none;
+
 		if (measure == "l1Norm" || measure == "l1norm") mt = MeasureType::l1Norm;
 		else if (measure == "l2norm" || measure == "l2Norm") mt = MeasureType::l2Norm;
 		else if (measure == "hamming" || measure == "hamming") mt = MeasureType::hammingNorm;
@@ -271,17 +272,17 @@ int main(const int argc, char** argv)
 		}
 
 		o = DetermineOrder(order);
-		if (sampleReconstructor.SortPatches(patches, mt,o))
+		if (sampleReconstructor.SortPatches(patches, mt, o))
 		{
 			s->SetSortedSamplePatches(patches);
-			const auto outputDir = oDir + "\\" + measure + "\\" + ToString(o) + "\\"+ s->BaseName();
+			const auto outputDir = oDir + "\\" + measure + "\\" + ToString(o) + "\\" + s->BaseName();
 			CreateDirecoty(outputDir);
 			s->SaveToDisc(outputDir, format);
 		}
 		else { throw exception("SortPatches failed, unable to save sorted patches"); }
 		ts.stop();
 
-		cout << "] 100%, Time = "<<ts.getTimeMilli()<<" ms\n";
+		cout << "] 100%, Time = " << ts.getTimeMilli() << " ms\n";
 
 		delete s;
 	}

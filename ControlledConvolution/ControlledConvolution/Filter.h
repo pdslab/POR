@@ -1,8 +1,11 @@
 #pragma once
-class filter
+class Filter
 {
 public:
-	filter();
-	~filter();
+	Filter();
+	~Filter();
+
+private:
+	int width_;
 };
 

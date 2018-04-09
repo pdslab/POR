@@ -393,6 +393,38 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 	throw exception("SortPatches -> Unknown measure type!");
 }
 
+bool Reconstructor::SortPixels(Patch *in, const Order & order)
+{
+	auto mat = in->GetMat();
+
+	unsigned char* input = (unsigned char*)mat.data;
+	if (!input) {
+		cerr << "No input data\n";
+		return false;
+	}
+
+	int i, j, r, g, b, count;
+
+	//extract rgb pixels 
+	for(i = 0; i < mat.cols; i++)
+	{
+		for (j = 0; j < mat.rows; j++)
+		{
+			b = input[mat.cols*j + i];
+			g = input[mat.cols*j + i + 1];
+			r = input[mat.cols*j + i + 2];
+			count += 1;
+		}
+	}
+	sort(b, b+count);
+	sort(g, g+count);
+	sort(r, r+count);
+
+	cv::Mat outMat = cv::Mat(mat.rows, mat.cols, r + g + b);
+	in->SetMat(outMat);
+	return true;
+}
+
 void Reconstructor::Stitch(Sample* s)
 {
 	const auto mode = Stitcher::PANORAMA;
