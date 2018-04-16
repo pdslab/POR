@@ -110,48 +110,51 @@ double Reconstructor::MutualInformation(const Patch & p1, const Patch & p2)
 
 cv::Scalar Reconstructor::StructuralSimilarityIndex(const Patch& p1, const Patch& p2)
 {
-	const double c1 = 6.5025, c2 = 58.5225;
+	const auto c1 = 6.5025, c2 = 58.5225;
+	/***************************** INITS **********************************/
 	const auto d = CV_32F;
 
-	//Init 
 	Mat i1, i2;
-	p1.GetMat().convertTo(i1, d);
+	p1.GetMat().convertTo(i1, d);           // cannot calculate on one byte large values
 	p2.GetMat().convertTo(i2, d);
-	const auto i1_squred = i1.mul(i1);
-	const auto i2_squred = i2.mul(i2);
-	const auto i1_i2 = i1.mul(i2); // i1 * i2
-	//Preliminary computing 
-	Mat mu1, mu2;
-	
+
+	const Mat i2Squared = i2.mul(i2);        // I2^2
+	const Mat i1Squared = i1.mul(i1);        // I1^2
+	const Mat i1Timesi2 = i1.mul(i2);        // I1 * I2
+
+	/*************************** END INITS **********************************/
+
+	Mat mu1, mu2;   // PRELIMINARY COMPUTING
 	GaussianBlur(i1, mu1, Size(11, 11), 1.5);
 	GaussianBlur(i2, mu2, Size(11, 11), 1.5);
 
-	const Mat mu1_squared = mu1.mul(mu1);
-	const Mat mu2_squared = mu2.mul(mu2);
-	const Mat mu1Mu2= mu1.mul(mu2);
+	const Mat mu1Squared = mu1.mul(mu1);
+	const Mat mu2Squared = mu2.mul(mu2);
+	const Mat mu1TimesMu2 = mu1.mul(mu2);
 
-	Mat sigma1_2, sigma2_2;
-	const Mat sigma12;
-	GaussianBlur(i1_squred, sigma1_2, Size(11, 11), 1.5);
-	sigma1_2 -= mu1_squared;
+	Mat sigma1Squared, sigma2Squared, sigma12;
 
-	GaussianBlur(i2_squred, sigma2_2, Size(11, 11), 1.5);
-	sigma2_2 -= mu2_squared;
+	GaussianBlur(i1Squared, sigma1Squared, Size(11, 11), 1.5);
+	sigma1Squared -= mu1Squared;
 
-	//Formula 
-	Mat t1 = 2 * mu1Mu2 + c1;
+	GaussianBlur(i2Squared, sigma2Squared, Size(11, 11), 1.5);
+	sigma2Squared -= mu2Squared;
+
+	GaussianBlur(i1Timesi2, sigma12, Size(11, 11), 1.5);
+	sigma12 -= mu1TimesMu2;
+
+	Mat t1 = 2 * mu1TimesMu2 + c1;
 	Mat t2 = 2 * sigma12 + c2;
-	const Mat t3 = t1.mul(t2); // t3 = ((2*mu1_mu2 + C1).*(2*sigma12 + C2))
+	const Mat t3 = t1.mul(t2);              // t3 = ((2*mu1_mu2 + C1).*(2*sigma12 + C2))
 
-	t1 = mu1_squared + mu2_squared + c1;
-	t2 = sigma1_2 + sigma2_2 + c2; 
-	t1 = t1.mul(t2);  // t1 =((mu1_2 + mu2_2 + C1).*(sigma1_2 + sigma2_2 + C2))
+	t1 = mu1Squared + mu2Squared + c1;
+	t2 = sigma1Squared + sigma2Squared + c2;
+	t1 = t1.mul(t2);               // t1 =((mu1_2 + mu2_2 + C1).*(sigma1_2 + sigma2_2 + C2))
 
 	Mat ssimMap;
-	divide(t3, t1, ssimMap); // ssim_map =  t3./t1;
+	divide(t3, t1, ssimMap);      // ssim_map =  t3./t1;
 
 	auto mssim = mean(ssimMap); // mssim = average of ssim map
-
 	return mssim;
 }
 
@@ -232,7 +235,8 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 		return true;
 	}
 
-	if (t == MeasureType::l1Norm || t == MeasureType::l2Norm || t == MeasureType::hammingNorm || t==MeasureType::psnr)
+	if (t == MeasureType::l1Norm || t == MeasureType::l2Norm 
+		|| t == MeasureType::hammingNorm || t==MeasureType::psnr ||t==MeasureType::ssimAverage)
 	{
 		for (auto i = 0; i <= v.size() - 1; i++)
 		{
@@ -393,22 +397,23 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 	throw exception("SortPatches -> Unknown measure type!");
 }
 
+
 bool Reconstructor::SortPixels(Patch *in, const Order & order)
 {
-	auto mat = in->GetMat();
+	const auto mat = in->GetMat();
 
-	unsigned char* input = (unsigned char*)mat.data;
+	const auto input = static_cast<unsigned char*>(mat.data);
 	if (!input) {
 		cerr << "No input data\n";
 		return false;
 	}
 
-	int i, j, r, g, b, count;
+	int r, g, b, count = 0;
 
 	//extract rgb pixels 
-	for(i = 0; i < mat.cols; i++)
+	for(auto i = 0; i < mat.cols; i++)
 	{
-		for (j = 0; j < mat.rows; j++)
+		for (auto j = 0; j < mat.rows; j++)
 		{
 			b = input[mat.cols*j + i];
 			g = input[mat.cols*j + i + 1];
@@ -416,13 +421,47 @@ bool Reconstructor::SortPixels(Patch *in, const Order & order)
 			count += 1;
 		}
 	}
-	sort(b, b+count);
+	/*sort(b, b+count);
 	sort(g, g+count);
-	sort(r, r+count);
+	sort(r, r+count);*/
 
-	cv::Mat outMat = cv::Mat(mat.rows, mat.cols, r + g + b);
+	const auto outMat = cv::Mat(mat.rows, mat.cols, r + g + b);
 	in->SetMat(outMat);
 	return true;
+}
+
+cv::Mat Reconstructor::SortPixels(cv::Mat &mat, const Order & order)
+{
+	cv::Mat outMat;
+	const auto input = static_cast<unsigned char*>(mat.data);
+	if (!input) {
+		cerr << "No input data\n";
+		return outMat;
+	}
+
+	int r, g, b, count = 0;
+
+	//extract rgb pixels 
+	for (auto i = 0; i < mat.cols; i++)
+	{
+		for (auto j = 0; j < mat.rows; j++)
+		{
+			b = input[mat.cols*j + i];
+			g = input[mat.cols*j + i + 1];
+			r = input[mat.cols*j + i + 2];
+			count += 1;
+		}
+	}
+	cout << b << endl;
+	cout << g << endl;
+	cout << r << endl;
+	/*sort(b, b+count);
+	sort(g, g+count);
+	sort(r, r+count);*/
+
+	 outMat = cv::Mat(mat.rows, mat.cols, r + g + b);
+
+	return outMat;
 }
 
 void Reconstructor::Stitch(Sample* s)

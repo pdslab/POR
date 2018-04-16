@@ -35,7 +35,6 @@ public:
 	static bool GreaterThan(const double u, const double v) { return u > v; }
 	static bool GreaterThan(const float u, const float v) { return u > v; }
 	static bool GreaterThan(const int u, const int v) { return u > v; }
-	static 
 };
 #endif
 

@@ -116,6 +116,16 @@ static string ToString(const Order & order)
 
 int main(const int argc, char** argv)
 {
+	const auto sample = "D:\\dev\\NeuralNetworks\\reconstructor\\samples\\cat.jpg";
+	auto s = new Sample(sample);
+	const cv::Size size(256, 256);
+	s->ToCvMat(size);
+	auto mat = s->Mat();
+	Common::Show(mat,"original");
+	const auto sorted = Reconstructor::SortPixels(mat, Order::increasing);
+	Common::Show(sorted,"original");
+
+	return -1;
 	cout << "Starting ...\n";
 	const String keys =
 		"{help h usage ?   |      | print this message}"
