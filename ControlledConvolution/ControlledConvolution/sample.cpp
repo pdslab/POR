@@ -88,7 +88,7 @@ void Sample::ToCvMat(const cv::Size& size)
 	cols_ = mat_.cols;
 	height_ = mat_.size().height;
 	width_ = mat_.size().width;
-	area_ = mat_.total();
+	area_ = static_cast<int>(mat_.total());
 	size_ = mat_.size();
 }
 

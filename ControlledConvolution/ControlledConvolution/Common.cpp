@@ -30,7 +30,7 @@ bool Common::IsPower2(const int& number)
 	return (number & (number - 1)) == 0;
 }
 
-void Common::Show(const Mat &image, const string& title="")
+void Common::Show(const Mat &image, const string& title = "")
 {
 	if (!image.data) // Check for invalid Sample
 	{
@@ -39,7 +39,7 @@ void Common::Show(const Mat &image, const string& title="")
 	}
 	Mat resized;
 	const cv::Size size(256, 256);
-	cv::resize(image, resized,size);
+	cv::resize(image, resized, size);
 
 	namedWindow(title, WINDOW_AUTOSIZE);// Create a window for display.
 	imshow(title, resized); // Show our image inside it.
@@ -112,7 +112,6 @@ void Common::ShowMultiple(const string& title, const int nArgs, ...)
 		w = 4; h = 3;
 		size = 200;
 	}
-	
 
 	// Create a new 3 channel image
 	const Mat dispImage = Mat::zeros(Size(100 + size*w, 60 + size*h), CV_8UC3);
@@ -168,13 +167,13 @@ void Common::ShowMultiple(const string& title, const int nArgs, ...)
 void Common::PrintVector(const vector<vector<float>>& vec)
 {
 	for (auto row = vec.begin(); row != vec.end(); ++row)
-	{ 
-		 for (auto col = row->begin(); col != row->end(); ++col)
-		 { 
-			cout << *col <<" "; 
-		 } 
-		 cout << endl;
-	} 
+	{
+		for (auto col = row->begin(); col != row->end(); ++col)
+		{
+			cout << *col << " ";
+		}
+		cout << endl;
+	}
 }
 
 void Common::WriteToFile(const vector<vector<float>>& vec, const string& file)
@@ -201,7 +200,6 @@ void Common::WriteToFile(const vector<vector<float>>& vec, const string& file)
 
 void Common::Resize(const Mat & input, Mat & output, const unsigned int & width, const unsigned int & height)
 {
-
 }
 
 Mat ConcatenateMatC(vector<Mat> &vec)
@@ -287,24 +285,24 @@ void Common::ReadCifar10(Mat &trainX, Mat &testX, Mat &trainY, Mat &testY)
 	labelt.copyTo(testY);
 }
 
-Mat Common::ConcatenateMat(vector<Mat>& vec) 
+Mat Common::ConcatenateMat(vector<Mat>& vec)
 {
 	Show(vec[0], "");
 	if (vec.size() < 2) { throw("Unable to stitch images. Need patches > 2"); }
 
 	vector<uchar> array;
 
-	for(auto i= 0; i< vec.size(); i++)
+	for (auto i = 0; i < vec.size(); i++)
 	{
-		if(vec[i].data && vec[i].isContinuous())
+		if (vec[i].data && vec[i].isContinuous())
 		{
 			array.assign(vec[i].datastart, vec[i].dataend);
 		}
 	}
 
-	Mat tmp(Size(256,256),CV_16UC1);
+	Mat tmp(Size(256, 256), CV_16UC1);
 
-	memcpy(tmp.data,&array,array.size());
+	memcpy(tmp.data, &array, array.size());
 
 	return tmp;
 }
@@ -347,4 +345,27 @@ void Common::SaveImage(const Mat& mat, const string& filename, const string& for
 {
 	const auto outputFile = filename + "." + format;
 	imwrite(outputFile, mat);
+}
+
+SemiRandomSortType Common::ToCustomType(const MeasureType &mt)
+{
+	const string message = "Measure type contains no custom sort order\n";
+	switch (mt)
+	{
+	case MeasureType::l1Norm:
+		return SemiRandomSortType::bubbleSortl1Norm;
+	case MeasureType::l2Norm:
+		return SemiRandomSortType::bubbleSortl2Norm;
+	case MeasureType::ssimAverage:
+		return SemiRandomSortType::bubbleSortSsimAverage;
+	case MeasureType::ssim0:
+		return SemiRandomSortType::bubbleSortSsim0;
+	case MeasureType::ssim1:
+		return SemiRandomSortType::bubbleSortSsim1;
+	case MeasureType::ssim2:
+		return SemiRandomSortType::bubbleSortSsim2;
+	case MeasureType::psnr:
+		return SemiRandomSortType::bubbleSrotPsnr;
+	default: throw runtime_error(message);
+	}
 }

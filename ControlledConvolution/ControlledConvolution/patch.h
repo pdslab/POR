@@ -1,6 +1,4 @@
 #pragma once
-#ifndef PATCH_H
-#define PATHC_H
 #include <iostream>
 #include "coordinate.h"
 #include <list>
@@ -41,7 +39,7 @@ public:
 		coo_ = c;
 	}
 
-	explicit Patch(const Mat& mat, const Coordinate &c);
+	explicit Patch(const cv::Mat& mat, const Coordinate &c);
 
 	void Release() { patch_mat_.release(); }
 	~Patch()
@@ -50,9 +48,9 @@ public:
 	}
 
 #pragma region utils
-	void SetName(const string &name) { name_ = name; }
-	void WriteToFile(const string& file) const;
-	void Save(const string& path, const string &format) const;
+	void SetName(const std::string &name) { name_ = name; }
+	void WriteToFile(const std::string& file) const;
+	void Save(const std::string& path, const std::string &format) const;
 	void ToPixel();
 	void SetMat(const cv::Mat& mat) { patch_mat_ = mat; }
 #pragma endregion
@@ -64,12 +62,12 @@ public:
 #pragma endregion
 
 #pragma region setters
-	initializer_list<Mat> Hist() const { return patch_histogram_; };
-	Mat RChannelHist()const { return r_channel_hist_; }
-	Mat GChannelHist() const { return g_channel_hist_; }
-	Mat BChannelHist() const { return b_channel_hist_; }
+	std::initializer_list<cv::Mat> Hist() const { return patch_histogram_; };
+	cv::Mat RChannelHist()const { return r_channel_hist_; }
+	cv::Mat GChannelHist() const { return g_channel_hist_; }
+	cv::Mat BChannelHist() const { return b_channel_hist_; }
 	float Entropy() const { return entropy_; }
-	void SetBgrPlanes(vector<Mat> &bgr_planes) { patch_bgr_planes_ = bgr_planes; }
+	void SetBgrPlanes(std::vector<cv::Mat> &bgr_planes) { patch_bgr_planes_ = bgr_planes; }
 #pragma endregion
 
 #pragma region getters
@@ -78,14 +76,14 @@ public:
 		return coo_;
 	}
 
-	string Name() const { return name_; }
-	Mat GetMat() const { return patch_mat_; }
-	vector<vector<float>> Pixels()const { return patch_pixels_float_; }
-	vector<Mat> BgrPlanes() const { return patch_bgr_planes_; }
+	std::string Name() const { return name_; }
+	cv::Mat GetMat() const { return patch_mat_; }
+	std::vector<std::vector<float>> Pixels()const { return patch_pixels_float_; }
+	std::vector<cv::Mat> BgrPlanes() const { return patch_bgr_planes_; }
 #pragma endregion
 
 private:
-	vector<vector<float>> ExtractPixels();
+	std::vector<std::vector<float>> ExtractPixels();
 	int start_row_;
 	int end_row_;
 	int start_column_;
@@ -93,19 +91,18 @@ private:
 	int corrdinates_[4];
 	int rows_;
 	int columns_;
-	string file_;
-	string name_;
+	std::string file_;
+	std::string name_;
 	Coordinate coo_;
-	Mat patch_mat_;
-	vector<vector<float>> patch_pixels_float_;
-	vector<uchar> patch_pixels_uchar_;
-	vector<Mat> patch_bgr_planes_;
-	initializer_list<Mat> patch_histogram_;
-	Mat r_channel_hist_;
-	Mat g_channel_hist_;
-	Mat b_channel_hist_;
+	cv::Mat patch_mat_;
+	std::vector<std::vector<float>> patch_pixels_float_;
+	std::vector<uchar> patch_pixels_uchar_;
+	std::vector<cv::Mat> patch_bgr_planes_;
+	std::initializer_list<cv::Mat> patch_histogram_;
+	cv::Mat r_channel_hist_;
+	cv::Mat g_channel_hist_;
+	cv::Mat b_channel_hist_;
 	float entropy_;
-	map<Patch, float> mutual_information_;
+	std::map<Patch, float> mutual_information_;
 };
 
-#endif

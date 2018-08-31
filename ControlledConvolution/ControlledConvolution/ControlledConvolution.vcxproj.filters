@@ -54,6 +54,12 @@
     <ClInclude Include="Reconstructor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Dataset.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageMeasure.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -87,6 +93,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Reconstructor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Dataset.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ImageMeasure.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

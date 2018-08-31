@@ -6,6 +6,7 @@
 #include "stdafx.h"
 #include <map>
 
+using namespace std;
 class Sample
 {
 public: 
@@ -23,14 +24,14 @@ public:
 		SetName(filePath);
 	}
 
-	string ExtractPatch(Mat& patch, const Coordinate &c);
+	string ExtractPatch(cv::Mat& patch, const Coordinate &c);
 	string GetInput() const { return input_file_; }
 	vector<Patch> Patches() const { return sample_patches_sorted_; }
 	void ToCvMat(const cv::Size& size);
 	bool Load();
 	void DetermineMinimumNumberOfPatchZones();
 	static void DetermineSampleFittness();
-	void GeneratePatchProposals(const Size &s) ;
+	void GeneratePatchProposals(const cv::Size &s) ;
 	void AddPatchCoordinates(const Coordinate& c) { patch_proposal_coordinates_.push_back(c); }
 	void AddPatch(Patch &p)
 	{
@@ -40,12 +41,12 @@ public:
 	
 	vector<Coordinate> PatchesCoordinates() const { return patch_proposal_coordinates_; }
 
-	Mat Mat() const
+	cv::Mat Mat() const
 	{
 		return mat_;
 	}
 
-	bool operator < (const Size& size1) const;
+	bool operator < (const cv::Size& size1) const;
 	void Resize(cv::Mat& output, const unsigned int& width, const unsigned int& height) const;
 	vector<cv::Mat> PachesAsVectorOfMats();
 	void SaveToDisc(const string& output, const string& format, bool original = false);
@@ -69,7 +70,7 @@ public:
 	void SetName(const string& name);
 	string Name() const { return name_; }
 	string BaseName() const;
-	Size Size() const { return size_; }
+	cv::Size Size() const { return size_; }
 #pragma endregion 
 
 private:

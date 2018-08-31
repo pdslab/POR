@@ -3,6 +3,9 @@
 #define COMMON_H
 #include <opencv2/highgui.hpp>
 #include "coordinate.h"
+#include "Reconstructor.h"
+#include <filesystem>
+namespace fs = experimental::filesystem;
 
 static const std::string PATCH_ROOT_DIR = "../../patches";
 static const std::string PATCH_PIXELS = PATCH_ROOT_DIR + "\\pixel data";
@@ -35,6 +38,21 @@ public:
 	static bool GreaterThan(const double u, const double v) { return u > v; }
 	static bool GreaterThan(const float u, const float v) { return u > v; }
 	static bool GreaterThan(const int u, const int v) { return u > v; }
+	static SemiRandomSortType ToCustomType(const MeasureType &mt);
+
+	static inline vector<string> GetSampleSet(const std::string dirPath)
+	{
+		vector<string> samples;
+
+		for (auto &file : fs::directory_iterator(dirPath))
+		{
+			std::ostringstream oss;
+			oss << file;
+			samples.push_back(oss.str());
+		}
+
+		return samples;
+	}
 };
 #endif
 

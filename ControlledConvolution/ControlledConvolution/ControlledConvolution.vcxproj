@@ -41,7 +41,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -162,8 +162,10 @@
     <ClInclude Include="Common.h" />
     <ClInclude Include="convolution.h" />
     <ClInclude Include="coordinate.h" />
+    <ClInclude Include="Dataset.h" />
     <ClInclude Include="feature_map.h" />
     <ClInclude Include="Filter.h" />
+    <ClInclude Include="ImageMeasure.h" />
     <ClInclude Include="Reconstructor.h" />
     <ClInclude Include="sample.h" />
     <ClInclude Include="patch.h" />
@@ -178,8 +180,10 @@
     <ClCompile Include="ccMain.cpp" />
     <ClCompile Include="convolution.cpp" />
     <ClCompile Include="coordinate.cpp" />
+    <ClCompile Include="Dataset.cpp" />
     <ClCompile Include="feature_map.cpp" />
     <ClCompile Include="Filter.cpp" />
+    <ClCompile Include="ImageMeasure.cpp" />
     <ClCompile Include="Reconstructor.cpp" />
     <ClCompile Include="sample.cpp" />
     <ClCompile Include="patch.cpp" />

@@ -9,6 +9,7 @@
 #include "Patch.h"
 #include "Reconstructor.h"
 #include <experimental/filesystem>
+#include "Dataset.h"
 
 typedef std::vector<std::string> stringvec;
 
@@ -113,30 +114,56 @@ static string ToString(const Order & order)
 	default: return "UnknownOrder";
 	}
 }
+static string ToString(const SemiRandomSortType & order)
+{
+	switch (order)
+	{
+	case SemiRandomSortType::none:
+		return "";
+	case SemiRandomSortType::bubbleSortl1Norm:
+		return "l1NormBubbleSort";
+	case SemiRandomSortType::bubbleSortl2Norm:
+		return "l2NormBubbleSort";
+	case SemiRandomSortType::bubbleSrotPsnr:
+		return "psnrBubbleSort";
+	case SemiRandomSortType::bubbleSortSsimAverage:
+		return "ssmiAverageBubbleSort";
+	case SemiRandomSortType::bubbleSortSsim0:
+		return "bubbleSortSsim0";
+	case SemiRandomSortType::bubbleSortSsim1:
+		return "bubbleSortSsim1";
+	case SemiRandomSortType::bubbleSortSsim2:
+		return "bubbleSortSsim2";
+	default: return "UnknownOrder";
+	}
+}
+
 
 int main(const int argc, char** argv)
 {
-	const auto sample = "D:\\dev\\NeuralNetworks\\reconstructor\\samples\\cat.jpg";
-	auto s = new Sample(sample);
-	const cv::Size size(256, 256);
-	s->ToCvMat(size);
-	auto mat = s->Mat();
-	Common::Show(mat,"original");
-	const auto sorted = Reconstructor::SortPixels(mat, Order::increasing);
-	Common::Show(sorted,"original");
+	//const auto sample = "D:\\dev\\NeuralNetworks\\reconstructor\\samples\\cat.jpg";
+	//auto s = new Sample(sample);
+	//const cv::Size size(256, 256);
+	//s->ToCvMat(size);
+	//auto mat = s->Mat();
+	//Common::Show(mat,"original");
+	//const auto sorted = Reconstructor::SortPixels(mat, Order::increasing);
+	//Common::Show(sorted,"original");
 
-	return -1;
+	//return -1;
 	cout << "Starting ...\n";
 	const String keys =
 		"{help h usage ?   |      | print this message}"
 		"{input_dir i iDir |<none>| directory containing samples}"
 		"{measure m        || measure to use for comparison}"
+		"{sort s        |false| sort type to apply when measure is custom}"
 		"{output_dir oDir o|<none>| output directory}"
 		"{format f         |jpeg| output format}"
 		"{x patch_width pw |8| patch width }"
 		"{patch_height ph y   |8| patch height}"
 		"{height h         |32| resize input to this size before processing}"
 		"{width w          |32| resize input to this size before processing}"
+		"{datasetEntropy |false| resize input to this size before processing}"
 		"{order |-1| ordering of patches during sorting. Options(0=increasing, 1=decreasing, 2=randomShuffle)}";
 	CommandLineParser parser(argc, argv, keys);
 	parser.about("\nControlled Convoluion (CC) v1.0.0");
@@ -152,19 +179,40 @@ int main(const int argc, char** argv)
 		parser.printMessage();
 		return -1;
 	}
+	const auto measureDatasetEntropy = parser.get<bool>("datasetEntropy");
+
+	if (measureDatasetEntropy)
+	{
+		const auto dir = argv[2];
+		const fs::path path(dir);
+
+		if (!exists(path))
+		{
+			cerr << "Exit code: -1, Supplied input path \"" << dir << "\"doesn't exist\n";
+			parser.printMessage();
+			return -1;
+		}
+
+		Dataset dataset(dir);
+		dataset.CalcualteEntropy();
+		cout << dataset;
+		return 0;
+	}
 
 	const auto iDir = parser.get<string>("input_dir");
 	const auto oDir = parser.get<string>("output_dir");
-	const auto measure = parser.get<string>("measure");
+	auto measure = parser.get<string>("measure");
 	const auto format = parser.get<string>("format");
 	const auto patchWidth = parser.get<int>("patch_width");
 	const auto patchHeight = parser.get<int>("patch_height");
 	const auto inputHeight = parser.get<int>("height");
 	const auto inputWidth = parser.get<int>("width");
 	const auto order = parser.get<int>("order");
+	const auto sort = parser.get<bool>("sort");
 	auto done = false;
 
 	const fs::path path(iDir);
+
 
 	if (!exists(path))
 	{
@@ -186,11 +234,43 @@ int main(const int argc, char** argv)
 		return -3;
 	}
 
+
+	MeasureType mt = {};
+	auto srst = SemiRandomSortType::none;
+	auto o = Order::none;
+
+	if (measure == "l1Norm" || measure == "l1norm") mt = MeasureType::l1Norm;
+	else if (measure == "l2norm" || measure == "l2Norm") mt = MeasureType::l2Norm;
+	else if (measure == "hamming" || measure == "hamming") mt = MeasureType::hammingNorm;
+	else if (measure == "c0e" || measure == "channel0_entropy") mt = MeasureType::channel0Entropy;
+	else if (measure == "c1e" || measure == "channel1_entropy") mt = MeasureType::channel1Entropy;
+	else if (measure == "c2e" || measure == "channel2_entropy") mt = MeasureType::channel2Entropy;
+	else if (measure == "ae" || measure == "average_entropy") mt = MeasureType::averageEntropy;
+	else if (measure == "psnr" || measure == "Psnr") mt = MeasureType::psnr;
+	else if (measure == "ssim" || measure == "ssim_average") mt = MeasureType::ssimAverage;
+	else if (measure == "ssim0" || measure == "channel0_ssim") mt = MeasureType::ssim0;
+	else if (measure == "ssim1" || measure == "channel1_ssim") mt = MeasureType::ssim1;
+	else if (measure == "ssim2" || measure == "channel2_ssim") mt = MeasureType::ssim2;
+	else
+	{
+		cerr << "Exit code: -4, Unknown measure type. Aborting ...\n";
+		return -4;
+	}
+	if (sort)
+	{
+		srst = Common::ToCustomType(mt);
+		mt = MeasureType::custom;
+		measure = "custom";
+		o = Order::none;
+	}
+
+	o = DetermineOrder(order);
 	cout << "\n\nCommand line parameters " << endl
 		<< "\tDataset directory | " << iDir << endl
 		<< "\tOutput directory  | " << oDir << endl
 		<< "\tMeasure           | " << measure << endl
 		<< "\tOrder				| " << order << endl
+		<< "\tSort type			| " << sort<< endl
 		<< "\tWidth		        | " << patchWidth << endl
 		<< "\tHeight		    | " << patchHeight << endl
 		<< "\tNumber of Samples | " << samples.size() << endl;
@@ -207,6 +287,8 @@ int main(const int argc, char** argv)
 
 	cv::TickMeter tm;
 	tm.start();
+	
+
 	for (const auto& sample : samples)
 	{
 		counter++;
@@ -260,32 +342,15 @@ int main(const int argc, char** argv)
 		s->SetSamplePatches(patches);
 		Reconstructor sampleReconstructor;
 		sampleReconstructor.SetSample(s);
-		MeasureType mt = {};
-		auto o = Order::none;
-
-		if (measure == "l1Norm" || measure == "l1norm") mt = MeasureType::l1Norm;
-		else if (measure == "l2norm" || measure == "l2Norm") mt = MeasureType::l2Norm;
-		else if (measure == "hamming" || measure == "hamming") mt = MeasureType::hammingNorm;
-		else if (measure == "c0e" || measure == "channel0_entropy") mt = MeasureType::channel0Entropy;
-		else if (measure == "c1e" || measure == "channel1_entropy") mt = MeasureType::channel1Entropy;
-		else if (measure == "c2e" || measure == "channel2_entropy") mt = MeasureType::channel2Entropy;
-		else if (measure == "ae" || measure == "average_entropy") mt = MeasureType::averageEntropy;
-		else if (measure == "psnr" || measure == "Psnr") mt = MeasureType::psnr;
-		else if (measure == "ssim" || measure == "ssim_average") mt = MeasureType::ssimAverage;
-		else if (measure == "ssim0" || measure == "channel0_ssim") mt = MeasureType::ssim0;
-		else if (measure == "ssim1" || measure == "channel1_ssim") mt = MeasureType::ssim1;
-		else if (measure == "ssim2" || measure == "channel2_ssim") mt = MeasureType::ssim2;
-		else
-		{
-			cerr << "Exit code: -4, Unknown measure type. Aborting ...\n";
-			return -4;
-		}
-
-		o = DetermineOrder(order);
-		if (sampleReconstructor.SortPatches(patches, mt, o))
+		
+		if (sampleReconstructor.SortPatches(patches, mt, o, srst))
 		{
 			s->SetSortedSamplePatches(patches);
-			const auto outputDir = oDir + "\\" + measure + "\\" + ToString(o) + "\\" + s->BaseName();
+			string ordering = "";
+			if (o != Order::none) ordering = "\\" + ToString(o);
+			if (srst != SemiRandomSortType::none) ordering = "\\" + ToString(srst);
+
+			const auto outputDir = oDir + "\\" + measure + ordering + "\\" + s->BaseName();
 			CreateDirecoty(outputDir);
 			s->SaveToDisc(outputDir, format);
 		}
@@ -303,3 +368,4 @@ int main(const int argc, char** argv)
 
 	return 0;
 }
+

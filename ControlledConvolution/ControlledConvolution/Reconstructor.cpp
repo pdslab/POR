@@ -33,7 +33,7 @@ double Reconstructor::PeakSignalToNoiseRatio(const Patch &p1, const Patch &p2)
 	const auto sse = s.val[0] + s.val[1] + s.val[2];
 	//if (sse <= 1e-10) return 0; //Too small return 0
 
-	const auto mse = sse / static_cast<double>(p1.GetMat().channels()) * p1.GetMat().total(); //mean squred error 
+	const auto mse = sse / static_cast<double>(p1.GetMat().channels()) * p1.GetMat().total(); //mean squred error
 	const auto psnr = 10.0*log10((255 * 255) / mse); //peaksignal to noise ratio In case of a simple single byte image per pixel per channel this is 255
 
 	return psnr;
@@ -69,7 +69,7 @@ cv::Scalar Reconstructor::Entropy(const Patch& p)
 
 	float f0 = 0, f1 = 0, f2 = 0;
 
-	for(auto i=0; i <histSize;i++)
+	for (auto i = 0; i < histSize; i++)
 	{
 		f0 += hist0.at<float>(i);
 		f1 += hist1.at<float>(i);
@@ -81,7 +81,7 @@ cv::Scalar Reconstructor::Entropy(const Patch& p)
 	e.val[1] = 0;
 	e.val[2] = 0;
 
-	for (auto i=0; i < histSize; i++)
+	for (auto i = 0; i < histSize; i++)
 	{
 		const auto p0 = abs(hist0.at<float>(i)) / f0;
 		const auto p1 = abs(hist1.at<float>(i)) / f1;
@@ -179,20 +179,20 @@ void Reconstructor::SortPatches(const Sample *s, const MeasureType t)
 		if (t == MeasureType::l2Norm) std::sort(patches.begin(), patches.end(), L2Norm);
 }
 
-bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Order& order=Order::none) const
+bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Order& order = Order::none, const SemiRandomSortType &sortType) const
 {
 	auto p0 = v[0];
 	Patch mostSimiarPatch;
 	v[0].SetName("0");
-	auto lastSmallestNorm = 10e100, norm1 = 0.0, norm2 = 0.0, psnr1 = 0.0, psnr2 = 0.0, ssim1=0.0, ssim2=0.0;
+	auto lastSmallestNorm = 10e100, norm1 = 0.0, norm2 = 0.0, psnr1 = 0.0, psnr2 = 0.0, ssim1 = 0.0, ssim2 = 0.0;
 
 	//cout << "Sorting patches, size = "<<v.size() << endl;
 
 	if (t == MeasureType::averageEntropy)
 	{
-		if(order == Order::increasing)
+		if (order == Order::increasing)
 			std::sort(v.begin(), v.end(), AverageEntropyAscending);
-		else 
+		else
 			std::sort(v.begin(), v.end(), AverageEntropyDescending);
 		for (auto i = 0; i < v.size(); i++)
 			v[i].SetName(to_string(i));
@@ -203,7 +203,7 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 	{
 		if (order == Order::increasing)
 			std::sort(v.begin(), v.end(), Channel0EntropyAscending);
-		else 
+		else
 			std::sort(v.begin(), v.end(), Channel0EntropyDescending);
 		for (auto i = 0; i < v.size(); i++)
 			v[i].SetName(to_string(i));
@@ -215,7 +215,7 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 	{
 		if (order == Order::increasing)
 			std::sort(v.begin(), v.end(), Channel1EntropyAscending);
-		else 
+		else
 			std::sort(v.begin(), v.end(), Channel1EntropyDescending);
 		for (auto i = 0; i < v.size(); i++)
 			v[i].SetName(to_string(i));
@@ -235,8 +235,8 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 		return true;
 	}
 
-	if (t == MeasureType::l1Norm || t == MeasureType::l2Norm 
-		|| t == MeasureType::hammingNorm || t==MeasureType::psnr ||t==MeasureType::ssimAverage)
+	if (t == MeasureType::l1Norm || t == MeasureType::l2Norm
+		|| t == MeasureType::hammingNorm || t == MeasureType::psnr || t == MeasureType::ssimAverage || t == MeasureType::custom)
 	{
 		for (auto i = 0; i <= v.size() - 1; i++)
 		{
@@ -294,8 +294,8 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 					break;
 				case MeasureType::psnr:
 					psnr1 = PeakSignalToNoiseRatio(v[i], v[j]);
-					psnr2 = PeakSignalToNoiseRatio(v[i], v[j+1]);
-					if (psnr1 != 0 && psnr2!= 0)
+					psnr2 = PeakSignalToNoiseRatio(v[i], v[j + 1]);
+					if (psnr1 != 0 && psnr2 != 0)
 					{
 						if (psnr1 > psnr2)
 						{
@@ -310,7 +310,7 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 					break;
 				case MeasureType::ssimAverage:
 					ssim1 = static_cast<double>(StructuralSimilarityIndex(v[i], v[j])[0] + StructuralSimilarityIndex(v[i], v[j])[1] +
-						StructuralSimilarityIndex(v[i], v[j])[2])/3.0;
+						StructuralSimilarityIndex(v[i], v[j])[2]) / 3.0;
 					ssim2 = static_cast<double>(StructuralSimilarityIndex(v[i], v[j + 1])[0] + StructuralSimilarityIndex(v[i], v[j + 1])[1] +
 						StructuralSimilarityIndex(v[i], v[j + 1])[2]) / 3.0;
 					if (ssim1 == ssim2)
@@ -318,7 +318,7 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 						v[j + 1].SetName(to_string(j + 1));
 						v[j].SetName(to_string(j));
 					}
-					else if(ssim1 > ssim2)
+					else if (ssim1 > ssim2)
 					{
 						v[j + 1].SetName(to_string(j));
 						std::swap(v[j], v[j + 1]);
@@ -352,7 +352,7 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 					ssim2 = static_cast<double>(StructuralSimilarityIndex(v[i], v[j + 1])[1]);
 					if (ssim1 == ssim2)
 					{
-						v[j + 1].SetName(to_string(j+1));
+						v[j + 1].SetName(to_string(j + 1));
 						v[j].SetName(to_string(j));
 					}
 					else if (ssim1 > ssim2)
@@ -383,6 +383,63 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 						v[j].SetName(to_string(j));
 					}
 					break;
+				case MeasureType::custom:
+					//calculate measures
+					if (sortType == SemiRandomSortType::bubbleSortl1Norm)
+					{
+						ssim1 = L1Norm(v[i], v[j]);
+						ssim2 = L1Norm(v[j], v[j + 1]);
+					}
+					else if (sortType == SemiRandomSortType::bubbleSortl2Norm)
+					{
+						ssim1 = L2Norm(v[i], v[j]);
+						ssim2 = L2Norm(v[j], v[j + 1]);
+					}
+					else if (sortType == SemiRandomSortType::bubbleSrotPsnr)
+					{
+						ssim1 = L2Norm(v[i], v[j]);
+						ssim2 = L2Norm(v[j], v[j + 1]);
+					}
+					else if (sortType == SemiRandomSortType::bubbleSortSsim0)
+					{
+						ssim1 = static_cast<double>(StructuralSimilarityIndex(v[i], v[j])[0]);
+						ssim2 = static_cast<double>(StructuralSimilarityIndex(v[j], v[j + 1])[0]);
+					}
+					else if (sortType == SemiRandomSortType::bubbleSortSsim1)
+					{
+						ssim1 = static_cast<double>(StructuralSimilarityIndex(v[i], v[j])[1]);
+						ssim2 = static_cast<double>(StructuralSimilarityIndex(v[j], v[j + 1])[1]);
+					}
+					else if (sortType == SemiRandomSortType::bubbleSortSsim2)
+					{
+						ssim1 = static_cast<double>(StructuralSimilarityIndex(v[i], v[j])[2]);
+						ssim2 = static_cast<double>(StructuralSimilarityIndex(v[j], v[j + 1])[2]);
+					}
+					else if (sortType == SemiRandomSortType::bubbleSortSsimAverage)
+					{
+						auto ssimValue = StructuralSimilarityIndex(v[i], v[j]);
+						ssim1 = static_cast<double>(ssimValue[0] + ssimValue[1] +ssimValue[2]) / 3.0;
+						ssim2 = static_cast<double>(ssimValue[0] + ssimValue[1] + ssimValue[2]) / 3.0;
+					}
+
+					else { std::cerr << "Supplied sort type is not supported"; exit(-1); }
+					//sort
+					if (ssim1 == ssim2)
+					{
+						v[j + 1].SetName(to_string(j + 1));
+						v[j].SetName(to_string(j));
+					}
+					else if (ssim1 > ssim2)
+					{
+						v[j + 1].SetName(to_string(j));
+						std::swap(v[j], v[j + 1]);
+					}
+					else if (ssim1 < ssim2)
+					{
+						v[j].SetName(to_string(j));
+					}
+					break;
+					break;
 				default:
 					cerr << "Unknown measure type!\n";
 					break;
@@ -397,7 +454,6 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 	throw exception("SortPatches -> Unknown measure type!");
 }
 
-
 bool Reconstructor::SortPixels(Patch *in, const Order & order)
 {
 	const auto mat = in->GetMat();
@@ -410,8 +466,8 @@ bool Reconstructor::SortPixels(Patch *in, const Order & order)
 
 	int r, g, b, count = 0;
 
-	//extract rgb pixels 
-	for(auto i = 0; i < mat.cols; i++)
+	//extract rgb pixels
+	for (auto i = 0; i < mat.cols; i++)
 	{
 		for (auto j = 0; j < mat.rows; j++)
 		{
@@ -441,7 +497,7 @@ cv::Mat Reconstructor::SortPixels(cv::Mat &mat, const Order & order)
 
 	int r, g, b, count = 0;
 
-	//extract rgb pixels 
+	//extract rgb pixels
 	for (auto i = 0; i < mat.cols; i++)
 	{
 		for (auto j = 0; j < mat.rows; j++)
@@ -459,7 +515,7 @@ cv::Mat Reconstructor::SortPixels(cv::Mat &mat, const Order & order)
 	sort(g, g+count);
 	sort(r, r+count);*/
 
-	 outMat = cv::Mat(mat.rows, mat.cols, r + g + b);
+	outMat = cv::Mat(mat.rows, mat.cols, r + g + b);
 
 	return outMat;
 }
@@ -499,8 +555,8 @@ bool Reconstructor::AverageEntropy(const Patch& p1, const Patch& p2, Order& orde
 {
 	auto entropy1 = Entropy(p1);
 	auto entropy2 = Entropy(p2);
-	const float e1 = (entropy1[0] + entropy1[1] + entropy1[2]) / 3.0;
-	const float e2 = (entropy2[0] + entropy2[1] + entropy2[2]) / 3.0;
+	const auto e1 = (entropy1[0] + entropy1[1] + entropy1[2]) / 3.0;
+	const auto e2 = (entropy2[0] + entropy2[1] + entropy2[2]) / 3.0;
 
 	return (e1 > e2) ? order == Order::decreasing : (e1 < e2);
 }
@@ -574,7 +630,7 @@ bool Reconstructor::Channel2EntropyAscending(const Patch & p1, const Patch & p2)
 bool Reconstructor::Channel2EntropyDescending(const Patch & p1, const Patch & p2)
 {
 	auto o = Order::decreasing;
-	return Channel2Entropy(p1,p2,o);
+	return Channel2Entropy(p1, p2, o);
 }
 
 bool Reconstructor::GreaterThan(const double i, const double j)

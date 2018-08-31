@@ -22,7 +22,20 @@ enum class MeasureType
 	averageEntropy, ji,
 	psnr, mi, pixel,
 	ssimAverage, ssim0,
-	ssim1, ssim2
+	ssim1, ssim2,
+	custom
+};
+
+enum class SemiRandomSortType
+{
+	none, 
+	bubbleSortl1Norm,
+	bubbleSortl2Norm,
+	bubbleSortSsimAverage,
+	bubbleSortSsim0,
+	bubbleSortSsim1,
+	bubbleSortSsim2,
+	bubbleSrotPsnr
 };
 
 enum class Order { decreasing, increasing, randomShuffle, none, unknown };
@@ -63,7 +76,7 @@ public:
 	/// <returns></returns>
 	static double PeakSignalToNoiseRatio(const Patch &p1, const Patch &p2);
 	/// <summary>
-	/// Computes the Entropy of a given patch.
+	/// Computes the CalculateEntropy of a given patch.
 	///𝐻=−∑_(𝑘=0)^(𝑀−1)▒〖𝑝_𝑘 log⁡(𝑝_𝑘)〗
 	/// </summary>
 	/// <param name="p">The p.</param>
@@ -100,8 +113,7 @@ public:
 
 #pragma region operators
 	void SortPatches(const Sample *s, MeasureType t);
-	//bool SortPatches(vector<Patch>& v, const MeasureType t, const Order& o) const;
-	bool SortPatches(vector<Patch>& v, MeasureType t, const Order &order) const;
+	bool SortPatches(vector<Patch>& v, MeasureType t, const Order &order, const SemiRandomSortType& sortType=SemiRandomSortType::none) const;
 	static bool SortPixels(Patch* in, const Order& order);
 	static cv::Mat SortPixels(cv::Mat &mat, const Order& order);
 	static void Stitch(Sample  *s);

@@ -14,6 +14,7 @@ from utils import get_dir_content
 
 FLAGS = 0
 
+
 def reconstruct(patches, output_name):
     """Reconstruct new sample from reordered patches 
     Arguments:
@@ -39,10 +40,10 @@ def reconstruct(patches, output_name):
     new_h = int(patch_width*img_size)
     new_w = int(patch_width*img_size)
 
-    print("Total Patches = {}".format(len(patches)))
-    print("Patch width, heigh = {}".format(patch_width))
-    print("Vertical, horizontal reconstruction strides = {}".format(img_size))
-    print("New image, (w,h) = ({},{})".format(new_w, new_h))
+    #print("Total Patches = {}".format(len(patches)))
+    #print("Patch width, heigh = {}".format(patch_width))
+    #print("Vertical, horizontal reconstruction strides = {}".format(img_size))
+    #print("New image, (w,h) = ({},{})".format(new_w, new_h))
 
     # Create place holder for new iamge
     result_image = Image.new('RGB', (new_w, new_h))
@@ -54,7 +55,7 @@ def reconstruct(patches, output_name):
     if FLAGS.random_shuffle_patches:
         random.shuffle(patch_names)
 
-    #for patch_name in patch_names:
+    # for patch_name in patch_names:
     for i in tqdm(range(len(patch_names))):
         patch_name = patch_names[i]
         patch = image_patches[patch_name]
@@ -70,13 +71,15 @@ def reconstruct(patches, output_name):
     #print("Reconstructed sample, (w,h) = ({},{})".format(result_image.width, result_image.height))
     #print("Area = {}".format(result_image.width*result_image.height))
 
-    result_image.save(os.path.join(FLAGS.recon_output_dir, output_name + ".jpg"))
+    result_image.save(os.path.join(
+        FLAGS.recon_output_dir, output_name + ".jpg"))
 
     if FLAGS.show_sample:
         result_image.show()
 
+
 def main(_):
-    patches_dir = os.listdir(FLAGS.patch_dir) 
+    patches_dir = os.listdir(FLAGS.patch_dir)
     if not os.path.exists(FLAGS.recon_output_dir):
         os.makedirs(FLAGS.recon_output_dir)
 
@@ -86,18 +89,19 @@ def main(_):
         patches = list(get_dir_content(patch_dir))
         reconstruct(patches, output_name)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Process input parameters to sticher')
     parser.add_argument(
         '--patch_dir',
         type=str,
-        default='D:\\Google Drive\\Data\\CatsVsDogs\\train\\train-patches\\ae\\increasing'
+        default='D:\\Google Drive\\Data\\CatsVsDogs\\train\\train-patches\\custom\\l2NormBubbleSort'
     )
     parser.add_argument(
-        '--recon_output_dir', 
+        '--recon_output_dir',
         type=str,
-        default='D:\\Google Drive\\Data\\CatsVsDogs\\train\\cc-train\\pixel_sorted\\ae\\increasing'
+        default='D:\\Google Drive\\Data\\CatsVsDogs\\train\\cc-train\\custom\\l2NormBubbleSort'
     )
     parser.add_argument(
         '--random_shuffle_patches',
