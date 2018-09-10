@@ -37,10 +37,11 @@ string Sample::ExtractPatch(cv::Mat & patch, const Coordinate & c)
 void Sample::ToCvMat(const cv::Size& size)
 {
 	mat_ = imread(input_file_);
-
+	original_height_ = mat_.size().height;
+	original_width_ = mat_.size().width;
 	//if(!Common::IsSquareImage(mat_))
 	//{
-	cerr << "Resizing to (" << size.width << "," << size.height << ")\n";
+	//cout<< "Resizing to (" << size.width << "," << size.height << ")\n";
 	cv::Mat temp;
 	cv::resize(mat_, temp, size);
 	mat_ = temp;
@@ -55,34 +56,34 @@ void Sample::ToCvMat(const cv::Size& size)
 	auto rows = mat_.rows;
 	auto cols = mat_.cols;
 
-	//if (!Common::IsPower2(rows) || !Common::IsPower2(cols))
-	//{
-	//	cout << "Warn: input diamension is not power of 2.\n";
+	if (!Common::IsPower2(rows) || !Common::IsPower2(cols))
+	{
+		cout << "Warn: input diamension is not power of 2.\n";
 
-	//	//Round up to the next power of 2
-	//	cout << "Rounding up width and height to the next powe of 2";
-	//	rows--;
-	//	rows |= rows >> 1;
-	//	rows |= rows >> 2;
-	//	rows |= rows >> 4;
-	//	rows |= rows >> 8;
-	//	rows |= rows >> 16;
-	//	rows++;
+		//Round up to the next power of 2
+		cout << "Rounding up width and height to the next powe of 2\n";
+		rows--;
+		rows |= rows >> 1;
+		rows |= rows >> 2;
+		rows |= rows >> 4;
+		rows |= rows >> 8;
+		rows |= rows >> 16;
+		rows++;
 
-	//	cols--;
-	//	cols |= cols >> 1;
-	//	cols |= cols >> 2;
-	//	cols |= cols >> 4;
-	//	cols |= cols >> 8;
-	//	cols |= cols >> 16;
-	//	cols++;
+		cols--;
+		cols |= cols >> 1;
+		cols |= cols >> 2;
+		cols |= cols >> 4;
+		cols |= cols >> 8;
+		cols |= cols >> 16;
+		cols++;
 
-	//	cout << "Resizing input to " << rows << "X" << cols << endl;
-	//	cv::Mat output;
-	//	Resize(output, rows,cols);
-	//	mat_.release();
-	//	mat_ = output;
-	//}
+		cout << "Resizing input to " << rows << "X" << cols << endl;
+		cv::Mat output;
+		Resize(output, rows,cols);
+		mat_.release();
+		mat_ = output;
+	}
 
 	rows_ = mat_.rows;
 	cols_ = mat_.cols;
@@ -105,15 +106,21 @@ bool Sample::Load()
 	return true;
 }
 
-void Sample::DetermineMinimumNumberOfPatchZones()
+void Sample::DetermineMinimumNumberOfPatchZones(const int &patch_height=0, const int &patch_width=0)
 {
 	if (height_ < MIN_PATCH_SIZE_Y || width_ < MIN_PATCH_SIZE_X)
 	{
 		throw("Unable to determine number of Patch zones. Input diamensions don't match the minimum requirement!");
 	}
 
-	minimum_number_of_patches_x_ = height_ / MIN_PATCH_SIZE_Y;
-	minimum_number_of_patches_y_ = width_ / MIN_PATCH_SIZE_Y;
+	if (patch_height != 0 && patch_width != 0) {
+		minimum_number_of_patches_y_ = height_ / patch_height;
+		minimum_number_of_patches_x_ = width_ / patch_width;
+	}
+	else {
+		minimum_number_of_patches_x_ = height_ / MIN_PATCH_SIZE_Y;
+		minimum_number_of_patches_y_ = width_ / MIN_PATCH_SIZE_Y;
+	}
 }
 
 void Sample::DetermineSampleFittness()

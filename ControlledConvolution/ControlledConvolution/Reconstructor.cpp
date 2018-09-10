@@ -185,6 +185,7 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 	Patch mostSimiarPatch;
 	v[0].SetName("0");
 	auto lastSmallestNorm = 10e100, norm1 = 0.0, norm2 = 0.0, psnr1 = 0.0, psnr2 = 0.0, ssim1 = 0.0, ssim2 = 0.0;
+	cv::Scalar ssim_index_between_i_and_j, ssim_index_between_i_and_j_plus_1;
 
 	//cout << "Sorting patches, size = "<<v.size() << endl;
 
@@ -238,6 +239,7 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 	if (t == MeasureType::l1Norm || t == MeasureType::l2Norm
 		|| t == MeasureType::hammingNorm || t == MeasureType::psnr || t == MeasureType::ssimAverage || t == MeasureType::custom)
 	{
+
 		for (auto i = 0; i <= v.size() - 1; i++)
 		{
 			for (auto j = i + 1; j < v.size() && j + 1 <= v.size() - 1; j++)
@@ -309,10 +311,12 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 					}
 					break;
 				case MeasureType::ssimAverage:
-					ssim1 = static_cast<double>(StructuralSimilarityIndex(v[i], v[j])[0] + StructuralSimilarityIndex(v[i], v[j])[1] +
-						StructuralSimilarityIndex(v[i], v[j])[2]) / 3.0;
-					ssim2 = static_cast<double>(StructuralSimilarityIndex(v[i], v[j + 1])[0] + StructuralSimilarityIndex(v[i], v[j + 1])[1] +
-						StructuralSimilarityIndex(v[i], v[j + 1])[2]) / 3.0;
+					ssim_index_between_i_and_j = StructuralSimilarityIndex(v[i], v[j]);
+					ssim_index_between_i_and_j_plus_1 = StructuralSimilarityIndex(v[i], v[j+1]);
+					ssim1 = static_cast<double>(ssim_index_between_i_and_j[0] + ssim_index_between_i_and_j[1] +
+						ssim_index_between_i_and_j[2]) / 3.0;
+					ssim2 = static_cast<double>(ssim_index_between_i_and_j_plus_1[0] + ssim_index_between_i_and_j_plus_1[1] +
+						ssim_index_between_i_and_j_plus_1[2]) / 3.0;
 					if (ssim1 == ssim2)
 					{
 						v[j + 1].SetName(to_string(j + 1));

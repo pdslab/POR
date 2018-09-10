@@ -9,8 +9,8 @@
 #include "Patch.h"
 #include "Reconstructor.h"
 #include <experimental/filesystem>
+#include <iomanip>
 #include "Dataset.h"
-
 typedef std::vector<std::string> stringvec;
 
 #pragma region inline
@@ -100,7 +100,6 @@ static Order DetermineOrder(const int &i)
 	default: return Order::unknown;
 	}
 }
-
 static string ToString(const Order & order)
 {
 	switch (order)
@@ -164,13 +163,20 @@ int main(const int argc, char** argv)
 		"{height h         |32| resize input to this size before processing}"
 		"{width w          |32| resize input to this size before processing}"
 		"{datasetEntropy |false| resize input to this size before processing}"
-		"{order |-1| ordering of patches during sorting. Options(0=increasing, 1=decreasing, 2=randomShuffle)}";
+		"{order |-1| ordering of patches during sorting. Options(0=increasing, 1=decreasing, 2=randomShuffle)}"
+		"{resize r |32| resize input to this size}"
+		"{debug d |0| set debug mode. This flag must be followed by a sample.}"
+		"{sample || sample to debug on}";
+
 	CommandLineParser parser(argc, argv, keys);
-	parser.about("\nControlled Convoluion (CC) v1.0.0");
+
+	parser.about("\nControlled Convoluion (CC) v1.1.0");
 
 	if (parser.has("help"))
 	{
+		cout << "---------------------------------------------\n";
 		parser.printMessage();
+		cout << "---------------------------------------------\n";
 		return 0;
 	}
 
@@ -195,7 +201,7 @@ int main(const int argc, char** argv)
 
 		Dataset dataset(dir);
 		dataset.CalcualteEntropy();
-		cout << dataset;
+
 		return 0;
 	}
 
@@ -209,10 +215,121 @@ int main(const int argc, char** argv)
 	const auto inputWidth = parser.get<int>("width");
 	const auto order = parser.get<int>("order");
 	const auto sort = parser.get<bool>("sort");
+	const auto debug = parser.get<bool>("debug");
 	auto done = false;
 
 	const fs::path path(iDir);
 
+	//input and patch size 
+	const cv::Size patchSize(patchWidth, patchHeight);
+	const cv::Size inputSize(inputWidth, inputHeight);
+
+
+	MeasureType mt = {};
+	auto srst = SemiRandomSortType::none;
+	auto o = Order::none;
+
+	if (measure == "l1Norm" || measure == "l1norm") mt = MeasureType::l1Norm;
+	else if (measure == "l2norm" || measure == "l2Norm") mt = MeasureType::l2Norm;
+	else if (measure == "hamming" || measure == "hamming") mt = MeasureType::hammingNorm;
+	else if (measure == "c0e" || measure == "channel0_entropy") mt = MeasureType::channel0Entropy;
+	else if (measure == "c1e" || measure == "channel1_entropy") mt = MeasureType::channel1Entropy;
+	else if (measure == "c2e" || measure == "channel2_entropy") mt = MeasureType::channel2Entropy;
+	else if (measure == "ae" || measure == "average_entropy") mt = MeasureType::averageEntropy;
+	else if (measure == "psnr" || measure == "Psnr") mt = MeasureType::psnr;
+	else if (measure == "ssim" || measure == "ssim_average") mt = MeasureType::ssimAverage;
+	else if (measure == "ssim0" || measure == "channel0_ssim") mt = MeasureType::ssim0;
+	else if (measure == "ssim1" || measure == "channel1_ssim") mt = MeasureType::ssim1;
+	else if (measure == "ssim2" || measure == "channel2_ssim") mt = MeasureType::ssim2;
+	else if (measure == "mi" || measure == "mutual_information") mt = MeasureType::mi;
+	else
+	{
+		cerr << "Exit code: -4, Unknown measure type. Aborting ...\n";
+		return -4;
+	}
+	if (sort)
+	{
+		srst = Common::ToCustomType(mt);
+		mt = MeasureType::custom;
+		measure = "custom";
+		o = Order::none;
+	}
+
+	o = DetermineOrder(order);
+	
+
+	if (debug)
+	{
+		const auto sample = parser.get<string>("sample");
+
+		if (sample.empty()) 
+		{
+			cerr << "Please supply a sample to debug with.\n";
+			return -5;
+		}
+
+		auto s = new Sample(sample);
+		s->ToCvMat(inputSize);
+		s->DetermineMinimumNumberOfPatchZones(patchHeight,patchWidth);
+		cv::Mat img;
+		// Generate patch proposals and coordinates
+		s->GeneratePatchProposals(patchSize);
+		cout << "----------------------------------------------------\n";
+		cout << "Original size:" <<std::setw(5)<<"("<< s->SampleOriginalSize().height << "," << s->SampleOriginalSize().width <<")"<< endl;
+		cout << "Resized: "<<std::setw(5)<<"(" << s->Size().height << "," << s->Size().width <<")"<<endl;
+		cout << "Patch size: "<<std::setw(5)<<"(" << patchHeight << "," << patchWidth <<")"<<endl;
+		cout << "Number of patches: " << setw(5) << pow(s->PossibleNumberOfPatches(),2)<< endl;
+		cout << "----------------------------------------------------\n";
+
+		cv::TickMeter tm;
+		tm.start();
+
+		//Extract patches
+		cout << "Sample " << " 0% [";
+		for (const auto& patchCoordinate : s->PatchesCoordinates())
+		{
+			//STEP 3. Extract the patches
+			s->ExtractPatch(img, patchCoordinate);
+			Patch p(img, patchCoordinate);
+			const auto name = Common::GeneratePatchName(patchCoordinate);
+			p.SetName(name);
+			p.ToPixel();
+			//p.Save(saveOutput, "bmp");
+
+			//STEP 4. Compute standalone image characterstics
+			p.ComputeHisogram();
+
+			s->AddPatch(p);
+			img.release();
+			cout << "#";
+		}
+		auto patches = s->Patches();
+		s->SetSamplePatches(patches);
+		Reconstructor sampleReconstructor;
+		sampleReconstructor.SetSample(s);
+
+		if (sampleReconstructor.SortPatches(patches, mt, o, srst))
+		{
+			s->SetSortedSamplePatches(patches);
+			string ordering = "";
+			if (o != Order::none) ordering = "\\" + ToString(o);
+			if (srst != SemiRandomSortType::none) ordering = "\\" + ToString(srst);
+
+			const auto outputDir = oDir + "\\" + measure + "_"+ordering + "_"+ to_string(patchHeight)+"\\" + s->BaseName();
+			CreateDirecoty(outputDir);
+			s->SaveToDisc(outputDir, format);
+		}
+		else { throw exception("SortPatches failed, unable to save sorted patches"); }
+		tm.stop();
+
+		cout << "] 100%, Time = " << tm.getTimeMilli() << " ms\n";
+
+		delete s;
+
+		//Common::Show(s->Mat(), "Original");
+
+		return 2;
+	}
 
 	if (!exists(path))
 	{
@@ -235,49 +352,6 @@ int main(const int argc, char** argv)
 	}
 
 
-	MeasureType mt = {};
-	auto srst = SemiRandomSortType::none;
-	auto o = Order::none;
-
-	if (measure == "l1Norm" || measure == "l1norm") mt = MeasureType::l1Norm;
-	else if (measure == "l2norm" || measure == "l2Norm") mt = MeasureType::l2Norm;
-	else if (measure == "hamming" || measure == "hamming") mt = MeasureType::hammingNorm;
-	else if (measure == "c0e" || measure == "channel0_entropy") mt = MeasureType::channel0Entropy;
-	else if (measure == "c1e" || measure == "channel1_entropy") mt = MeasureType::channel1Entropy;
-	else if (measure == "c2e" || measure == "channel2_entropy") mt = MeasureType::channel2Entropy;
-	else if (measure == "ae" || measure == "average_entropy") mt = MeasureType::averageEntropy;
-	else if (measure == "psnr" || measure == "Psnr") mt = MeasureType::psnr;
-	else if (measure == "ssim" || measure == "ssim_average") mt = MeasureType::ssimAverage;
-	else if (measure == "ssim0" || measure == "channel0_ssim") mt = MeasureType::ssim0;
-	else if (measure == "ssim1" || measure == "channel1_ssim") mt = MeasureType::ssim1;
-	else if (measure == "ssim2" || measure == "channel2_ssim") mt = MeasureType::ssim2;
-	else
-	{
-		cerr << "Exit code: -4, Unknown measure type. Aborting ...\n";
-		return -4;
-	}
-	if (sort)
-	{
-		srst = Common::ToCustomType(mt);
-		mt = MeasureType::custom;
-		measure = "custom";
-		o = Order::none;
-	}
-
-	o = DetermineOrder(order);
-	cout << "\n\nCommand line parameters " << endl
-		<< "\tDataset directory | " << iDir << endl
-		<< "\tOutput directory  | " << oDir << endl
-		<< "\tMeasure           | " << measure << endl
-		<< "\tOrder				| " << order << endl
-		<< "\tSort type			| " << sort<< endl
-		<< "\tWidth		        | " << patchWidth << endl
-		<< "\tHeight		    | " << patchHeight << endl
-		<< "\tNumber of Samples | " << samples.size() << endl;
-
-	const cv::Size patchSize(patchWidth, patchHeight);
-	const cv::Size inputSize(inputWidth, inputHeight);
-
 	cout << "\nContinue ... y (yes) or n (no)?\n";
 	char userInput;
 	cin >> userInput;
@@ -288,6 +362,15 @@ int main(const int argc, char** argv)
 	cv::TickMeter tm;
 	tm.start();
 	
+	cout << "\n\nCommand line parameters " << endl
+		<< "\tDataset directory | " << iDir << endl
+		<< "\tOutput directory  | " << oDir << endl
+		<< "\tMeasure           | " << measure << endl
+		<< "\tOrder				| " << order << endl
+		<< "\tSort type			| " << sort << endl
+		<< "\tWidth		        | " << patchWidth << endl
+		<< "\tHeight		    | " << patchHeight << endl
+		<< "\tNumber of Samples | " << samples.size() << endl;
 
 	for (const auto& sample : samples)
 	{
@@ -309,7 +392,7 @@ int main(const int argc, char** argv)
 		ts.start();
 
 		//STEP 1. Determine the minimum number of Patches ( assuming 8x8 patch is  the smallest patch)
-		s->DetermineMinimumNumberOfPatchZones();
+		s->DetermineMinimumNumberOfPatchZones(patchHeight,patchWidth);
 		cv::Mat img;
 
 		//s->GetStat();

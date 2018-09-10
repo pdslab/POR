@@ -29,7 +29,7 @@ public:
 	vector<Patch> Patches() const { return sample_patches_sorted_; }
 	void ToCvMat(const cv::Size& size);
 	bool Load();
-	void DetermineMinimumNumberOfPatchZones();
+	void DetermineMinimumNumberOfPatchZones(const int& patch_height, const int& patch_width);
 	static void DetermineSampleFittness();
 	void GeneratePatchProposals(const cv::Size &s) ;
 	void AddPatchCoordinates(const Coordinate& c) { patch_proposal_coordinates_.push_back(c); }
@@ -53,6 +53,10 @@ public:
 	friend class Reconstructor;
 
 #pragma  region Setters and Getters
+
+	cv::Size SampleOriginalSize() { return cv::Size(original_height_, original_width_); }
+	int PossibleNumberOfPatches() { return minimum_number_of_patches_x_; }
+
 	void SetSortedSamplePatches(const vector<Patch>& patch)
 	{
 		sample_patches_sorted_ = patch;
@@ -77,11 +81,14 @@ private:
 	string input_file_;
 	vector<Patch> sample_patches_sorted_;
 	vector<Patch> sample_patches_original_;
+	cv::Size sample_original_size_;
 	vector<Coordinate> patch_proposal_coordinates_;
 	int minimum_number_of_patches_x_;
 	int minimum_number_of_patches_y_;
 	int height_;
+	int original_height_;
 	int width_;
+	int original_width_;
 	int rows_;
 	int cols_;
 	int area_;
