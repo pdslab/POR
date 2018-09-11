@@ -165,7 +165,7 @@ int main(const int argc, char** argv)
 		"{datasetEntropy |false| resize input to this size before processing}"
 		"{order |-1| ordering of patches during sorting. Options(0=increasing, 1=decreasing, 2=randomShuffle)}"
 		"{resize r |32| resize input to this size}"
-		"{debug d |0| set debug mode. This flag must be followed by a sample.}"
+		"{debug d |0| set debug mode. This flag must be followed by a sample (--sample=path to sample).}"
 		"{sample || sample to debug on}";
 
 	CommandLineParser parser(argc, argv, keys);
@@ -242,6 +242,8 @@ int main(const int argc, char** argv)
 	else if (measure == "ssim1" || measure == "channel1_ssim") mt = MeasureType::ssim1;
 	else if (measure == "ssim2" || measure == "channel2_ssim") mt = MeasureType::ssim2;
 	else if (measure == "mi" || measure == "mutual_information") mt = MeasureType::mi;
+	else if (measure == "je" || measure == "joint_entropy") mt = MeasureType::je;
+	else if (measure == "ce" || measure == "conditional_entropy") mt = MeasureType::ce;
 	else
 	{
 		cerr << "Exit code: -4, Unknown measure type. Aborting ...\n";

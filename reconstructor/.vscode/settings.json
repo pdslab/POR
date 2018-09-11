@@ -6,7 +6,7 @@
     "python.unitTest.promptToConfigure": false,
     "python.unitTest.unittestEnabled": false,
     "python.unitTest.nosetestsEnabled": false,
-    "python.pythonPath": "D:\\Anaconda3\\python.exe",
+    "python.pythonPath": "C:\\miniconda\\envs\\tensorflow\\python.exe",
     "files.associations": {
         "ostream": "cpp"
     }

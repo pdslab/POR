@@ -20,7 +20,7 @@ enum class MeasureType
 	channel1Entropy,
 	channel2Entropy,
 	averageEntropy, ji,
-	psnr, mi, pixel,
+	psnr,je,ce, mi, pixel,
 	ssimAverage, ssim0,
 	ssim1, ssim2,
 	custom
