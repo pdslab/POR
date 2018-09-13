@@ -140,15 +140,6 @@ static string ToString(const SemiRandomSortType & order)
 
 int main(const int argc, char** argv)
 {
-	//const auto sample = "D:\\dev\\NeuralNetworks\\reconstructor\\samples\\cat.jpg";
-	//auto s = new Sample(sample);
-	//const cv::Size size(256, 256);
-	//s->ToCvMat(size);
-	//auto mat = s->Mat();
-	//Common::Show(mat,"original");
-	//const auto sorted = Reconstructor::SortPixels(mat, Order::increasing);
-	//Common::Show(sorted,"original");
-
 	//return -1;
 	cout << "Starting ...\n";
 	const String keys =
@@ -165,6 +156,7 @@ int main(const int argc, char** argv)
 		"{datasetEntropy |false| resize input to this size before processing}"
 		"{order |-1| ordering of patches during sorting. Options(0=increasing, 1=decreasing, 2=randomShuffle)}"
 		"{resize r |32| resize input to this size}"
+		"{roundup |false| round up input size to nearest power of 2}"
 		"{debug d |0| set debug mode. This flag must be followed by a sample (--sample=path to sample).}"
 		"{sample || sample to debug on}";
 
@@ -216,13 +208,15 @@ int main(const int argc, char** argv)
 	const auto order = parser.get<int>("order");
 	const auto sort = parser.get<bool>("sort");
 	const auto debug = parser.get<bool>("debug");
+	const auto resized = parser.get<int>("resize");
+	const auto roundup = parser.get<bool>("roundup");
 	auto done = false;
 
 	const fs::path path(iDir);
 
 	//input and patch size 
 	const cv::Size patchSize(patchWidth, patchHeight);
-	const cv::Size inputSize(inputWidth, inputHeight);
+	const cv::Size inputSize(resized, resized);
 
 
 	MeasureType mt = {};
@@ -353,12 +347,13 @@ int main(const int argc, char** argv)
 		return -3;
 	}
 
-
+#if DEBUG
 	cout << "\nContinue ... y (yes) or n (no)?\n";
 	char userInput;
 	cin >> userInput;
-
 	if (userInput == 'n' || userInput == 'N') exit(-2);
+#endif
+
 	auto counter = 0;
 
 	cv::TickMeter tm;
@@ -381,14 +376,14 @@ int main(const int argc, char** argv)
 
 		//Read Sample
 		auto s = new Sample(sample);
-		s->ToCvMat(inputSize);
+		s->ToCvMat(inputSize,roundup);
 
-		while (!done)
+	/*	while (!done)
 		{
 			Common::Show(s->Mat(), title);
 			cin.ignore();
 			done = true;
-		}
+		}*/
 
 		cv::TickMeter ts;
 		ts.start();
@@ -415,7 +410,7 @@ int main(const int argc, char** argv)
 			//p.Save(saveOutput, "bmp");
 
 			//STEP 4. Compute standalone image characterstics
-			p.ComputeHisogram();
+			//p.ComputeHisogram();
 
 			s->AddPatch(p);
 			img.release();
@@ -435,7 +430,9 @@ int main(const int argc, char** argv)
 			if (o != Order::none) ordering = "\\" + ToString(o);
 			if (srst != SemiRandomSortType::none) ordering = "\\" + ToString(srst);
 
-			const auto outputDir = oDir + "\\" + measure + ordering + "\\" + s->BaseName();
+			const auto outputDir = oDir  + "\\"+ to_string(patchHeight)+"x"+
+				to_string(patchWidth) + "\\" + measure +"\\"+ ordering + "\\" + s->BaseName();
+
 			CreateDirecoty(outputDir);
 			s->SaveToDisc(outputDir, format);
 		}

@@ -34,7 +34,7 @@ string Sample::ExtractPatch(cv::Mat & patch, const Coordinate & c)
 	return Common::GeneratePatchName(c);
 }
 
-void Sample::ToCvMat(const cv::Size& size)
+void Sample::ToCvMat(const cv::Size& size, bool round_up_to_nearest_power_of_2)
 {
 	mat_ = imread(input_file_);
 	original_height_ = mat_.size().height;
@@ -56,7 +56,7 @@ void Sample::ToCvMat(const cv::Size& size)
 	auto rows = mat_.rows;
 	auto cols = mat_.cols;
 
-	if (!Common::IsPower2(rows) || !Common::IsPower2(cols))
+	if (round_up_to_nearest_power_of_2 && (!Common::IsPower2(rows) || !Common::IsPower2(cols)))
 	{
 		cout << "Warn: input diamension is not power of 2.\n";
 

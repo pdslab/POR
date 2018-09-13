@@ -27,7 +27,7 @@ public:
 	string ExtractPatch(cv::Mat& patch, const Coordinate &c);
 	string GetInput() const { return input_file_; }
 	vector<Patch> Patches() const { return sample_patches_sorted_; }
-	void ToCvMat(const cv::Size& size);
+	void ToCvMat(const cv::Size& size,bool round_up_to_nearest_power_of_2=false);
 	bool Load();
 	void DetermineMinimumNumberOfPatchZones(const int& patch_height, const int& patch_width);
 	static void DetermineSampleFittness();

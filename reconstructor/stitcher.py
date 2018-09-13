@@ -15,7 +15,7 @@ from utils import get_dir_content
 FLAGS = 0
 
 
-def reconstruct(patches, output_name):
+def reconstruct(patches, output_dir, output_name):
     """Reconstruct new sample from reordered patches 
     Arguments:
         patches {list} -- a list of order set of patches
@@ -59,7 +59,7 @@ def reconstruct(patches, output_name):
     for i in tqdm(range(len(patch_names))):
         patch_name = patch_names[i]
         patch = image_patches[patch_name]
-        patch = sort_all_pixels(patch)
+        #patch = sort_all_pixels(patch)
         #print("Concat'ing patch \'{}\' at position ({},{})".format(patch_name, cx, cy))
         result_image.paste(im=patch, box=(cx*patch_width, cy*patch_width))
         cx += 1
@@ -72,22 +72,35 @@ def reconstruct(patches, output_name):
     #print("Area = {}".format(result_image.width*result_image.height))
 
     result_image.save(os.path.join(
-        FLAGS.recon_output_dir, output_name + ".jpg"))
+        output_dir, output_name + ".jpg"))
 
     if FLAGS.show_sample:
         result_image.show()
 
 
 def main(_):
-    patches_dir = os.listdir(FLAGS.patch_dir)
-    if not os.path.exists(FLAGS.recon_output_dir):
-        os.makedirs(FLAGS.recon_output_dir)
 
-    for patch_dir in patches_dir:
-        patch_dir = os.path.join(FLAGS.patch_dir, patch_dir)
-        output_name = os.path.basename(patch_dir)
-        patches = list(get_dir_content(patch_dir))
-        reconstruct(patches, output_name)
+    classes = ['cat','ship','dog','airplane','truck','frog','horse','deer','automobile','bird']
+    patch_size = ["8x8","16x16","4x4"]
+    measure_type = 'Average_Entropy'
+
+    dataset = "E:\\DATA\cifar\\cifar10\\preprocessed\\patches\\"
+    output = 'E:\\DATA\\cifar\\cifar10\\preprocessed\\reconstructed\\'
+    output = os.path.join(output,measure_type)
+
+    for category in classes:
+        for size in patch_size:
+            patches = os.path.join(dataset,category,size,"ae\\increasing")
+            sample_output = os.path.join(output,size,category)
+            patches_dir = os.listdir(patches)
+            if not os.path.exists(sample_output):
+                os.makedirs(sample_output)
+
+            for patch_dir in patches_dir:
+                patch_dir = os.path.join(patches, patch_dir)
+                output_name = os.path.basename(patch_dir)
+                img_patches = list(get_dir_content(patch_dir))
+                reconstruct(img_patches, sample_output,output_name)
 
 
 if __name__ == '__main__':
@@ -96,12 +109,12 @@ if __name__ == '__main__':
     parser.add_argument(
         '--patch_dir',
         type=str,
-        default='D:\\Google Drive\\Data\\CatsVsDogs\\train\\train-patches\\custom\\l2NormBubbleSort'
+        default='E:\\DATA\cifar\\cifar10\\preprocessed\\patches\\automobile\\8x8\\ae\\increasing'
     )
     parser.add_argument(
         '--recon_output_dir',
         type=str,
-        default='D:\\Google Drive\\Data\\CatsVsDogs\\train\\cc-train\\custom\\l2NormBubbleSort'
+        default='E:\\DATA\\cifar\\cifar10\\preprocessed\\reconstructed\\Average_Entropy\\8x8\\automobile'
     )
     parser.add_argument(
         '--random_shuffle_patches',
