@@ -443,7 +443,6 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 						v[j].SetName(to_string(j));
 					}
 					break;
-					break;
 				default:
 					cerr << "Unknown measure type!\n";
 					break;
