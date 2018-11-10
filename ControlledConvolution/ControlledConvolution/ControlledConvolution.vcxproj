@@ -165,7 +165,7 @@
     <ClInclude Include="convolution.h" />
     <ClInclude Include="coordinate.h" />
     <ClInclude Include="Dataset.h" />
-    <ClInclude Include="Entropy.h" />
+    <ClInclude Include="ImageRegister.h" />
     <ClInclude Include="feature_map.h" />
     <ClInclude Include="Filter.h" />
     <ClInclude Include="ImageMeasure.h" />
@@ -184,7 +184,7 @@
     <ClCompile Include="convolution.cpp" />
     <ClCompile Include="coordinate.cpp" />
     <ClCompile Include="Dataset.cpp" />
-    <ClCompile Include="Entropy.cpp" />
+    <ClCompile Include="ImageRegister.cpp" />
     <ClCompile Include="feature_map.cpp" />
     <ClCompile Include="Filter.cpp" />
     <ClCompile Include="ImageMeasure.cpp" />

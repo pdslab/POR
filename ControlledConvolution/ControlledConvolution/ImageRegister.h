@@ -8,22 +8,23 @@ using namespace cv;
 
 
 #pragma once
-class Entropy
+class ImageRegister
 {
-
 		/* TODO
 		 * > Verify what methods are public.
 		 */
 
 	public:
-		Entropy(string fixed_path, string moving_path);
-		~Entropy();
-		Mat calHistogram(Mat image);
-		Mat calJointHistogram(Mat image_1, Mat image_2);
-		float calEntropy(Mat image);
-		float calJointEntropy(Mat image_1, Mat image_2);
-		float calMutualInformation(Mat image_1, Mat image_2);
-		double calMaxMutualInformationValue(Mat image_1, Mat image_2, int points, int max_iterations = 2500);
+		ImageRegister(string fixed_path, string moving_path);
+		ImageRegister(Mat fixed_mat, Mat moving_mat, cv::Size resize_to);
+		~ImageRegister();
+		Mat ComputeHistogram(Mat image);
+		Mat ComputeJointHistogram(Mat image_1, Mat image_2);
+		float ComputeEntropy(Mat image);
+		float ComputeRelativeEntropy(Mat image_1, Mat image_2);
+		float ComputeJointEntropy(Mat image_1, Mat image_2);
+		float ComputeMutualInformation(Mat image_1, Mat image_2);
+		double ComputeMaxMutualInformationValue(Mat image_1, Mat image_2, int points, int max_iterations = 2500);
 
 		/* Testing*/
 
@@ -44,8 +45,8 @@ class Entropy
 
 	public:
 		int getHistSize() const { return histSize; }
-		Mat getFixedImage() const { return fixed; }
-		Mat getMovingImage() const { return moving; }
+		Mat GetFixedImage() const { return fixed; }
+		Mat GetMovingImage() const { return moving; }
 
 		/* Testing*/
 };

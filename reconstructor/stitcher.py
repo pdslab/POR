@@ -22,6 +22,9 @@ def reconstruct(patches, output_dir, output_name, output_format=".jpg"):
     Returns:
         [image] -- reconstructed image 
     """
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
     image_patches = {}
     for im in patches:
         image = Image.open(im)
@@ -68,8 +71,6 @@ def reconstruct(patches, output_dir, output_name, output_format=".jpg"):
             cx = 0
             cy += 1
 
-    #print("Reconstructed sample, (w,h) = ({},{})".format(result_image.width, result_image.height))
-    #print("Area = {}".format(result_image.width*result_image.height))
 
     result_image.save(os.path.join(
         output_dir, output_name + output_format))
@@ -117,51 +118,28 @@ def main(_):
                     content = list(get_dir_content(os.path.join(patches_path,p)))
                     reconstruct(content,category_outpath,p,FLAGS.output_format)                
 
-    patch_size = ["8x8","16x16","4x4"]
-    measure_type = 'Average_Entropy'
-    output_format = ".png"
-
-    dataset = "E:\\DATA\cifar\\cifar10\\preprocessed\\train_patches\\"
-    output = 'E:\\DATA\\cifar\\cifar10\\preprocessed\\reconstructed\\'
-    output = os.path.join(output,measure_type)
-
-    # for category in classes:
-    #     for size in patch_size:
-    #         patches = os.path.join(dataset,category,size,"ae\\increasing")
-    #         sample_output = os.path.join(output,size,category)
-    #         patches_dir = os.listdir(patches)
-    #         if not os.path.exists(sample_output):
-    #             os.makedirs(sample_output)
-
-    #         for patch_dir in patches_dir:
-    #             patch_dir = os.path.join(patches, patch_dir)
-    #             output_name = os.path.basename(patch_dir)
-    #             img_patches = list(get_dir_content(patch_dir))
-    #             reconstruct(img_patches, sample_output,output_name,output_format)
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Process input parameters to sticher')
     parser.add_argument(
         '--patch_dir',
         type=str,
-        default='E:\\DATA\\cifar\\cifar100\\preprocessed\\train_patches'
+        default='E:\DATA\cifar\cifar10\preprocessed\\train_l1_l2_nrom'
     )
     parser.add_argument(
         '--output_dir',
         type=str,
-        default='E:\\DATA\\cifar\\cifar100\\preprocessed\\reconstructed'
+        default='E:\DATA\cifar\cifar10\preprocessed\\reconstructed'
     )
     parser.add_argument(
         '--dataset_name',
         type=str,
-        default='cifar100'
+        default='l2norm'
     )
     parser.add_argument(
         '--measure',
         type=str,
-        default='ae/increasing'
+        default='l2norm\increasing'
     )
     parser.add_argument(
         '--output_format',
@@ -178,6 +156,7 @@ if __name__ == '__main__':
         type=bool,
         default=False
     )
-
     FLAGS, unparsed = parser.parse_known_args()
-    main(unparsed)
+    content = list(get_dir_content("C:\\phd\\Samples\\output\\kl__8\\lynx"))
+    reconstruct(content,"C:\\phd\\Samples\\recon\\kl\\8","cu_lynx",".png")
+    # main(unparsed)

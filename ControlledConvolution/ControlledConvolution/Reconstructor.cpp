@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Reconstructor.h"
+#include "ImageRegister.h"
 #include "Common.h"
 #include <iostream>
 #include <opencv2/stitching.hpp>
@@ -98,14 +99,18 @@ cv::Scalar Reconstructor::Entropy(const Patch& p)
 	return e;
 }
 
-double Reconstructor::JointEntropy(const Patch & p1, const Patch & p2)
+float Reconstructor::JointEntropy(const Patch & p1, const Patch & p2)
 {
-	return 0.0;
+	ImageRegister imgRegister(p1.GetMat(), p2.GetMat(), cv::Size(32, 32));
+
+	return imgRegister.ComputeJointEntropy(imgRegister.GetFixedImage(), imgRegister.GetMovingImage());
 }
 
 double Reconstructor::MutualInformation(const Patch & p1, const Patch & p2)
 {
-	return 0.0;
+	ImageRegister imgRegister(p1.GetMat(), p2.GetMat(), cv::Size(32, 32));
+
+	return imgRegister.ComputeMutualInformation(imgRegister.GetFixedImage(), imgRegister.GetMovingImage());
 }
 
 cv::Scalar Reconstructor::StructuralSimilarityIndex(const Patch& p1, const Patch& p2)
@@ -156,6 +161,14 @@ cv::Scalar Reconstructor::StructuralSimilarityIndex(const Patch& p1, const Patch
 
 	auto mssim = mean(ssimMap); // mssim = average of ssim map
 	return mssim;
+}
+
+double Reconstructor::RelativeEntropy(const Patch & p1, const Patch & p2)
+{
+	ImageRegister imgRegister(p1.GetMat(), p2.GetMat(), cv::Size(32, 32));
+	return imgRegister.ComputeRelativeEntropy(imgRegister.GetFixedImage(), imgRegister.GetMovingImage());
+
+	return 0.0;
 }
 
 Reconstructor::Reconstructor() : sample_(nullptr)
@@ -237,7 +250,8 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 	}
 
 	if (t == MeasureType::l1Norm || t == MeasureType::l2Norm
-		|| t == MeasureType::hammingNorm || t == MeasureType::psnr || t == MeasureType::ssimAverage || t == MeasureType::custom)
+		|| t == MeasureType::hammingNorm || t == MeasureType::psnr || t == MeasureType::ssimAverage 
+		|| t == MeasureType::custom || t == MeasureType::je || t == MeasureType::mi || t == MeasureType::kl)
 	{
 
 		for (auto i = 0; i <= v.size() - 1; i++)
@@ -246,6 +260,54 @@ bool Reconstructor::SortPatches(vector<Patch>& v, const MeasureType t, const Ord
 			{
 				switch (t)
 				{
+				case MeasureType::mi:
+					norm1 = MutualInformation(v[i], v[j]);
+					norm2 = MutualInformation(v[i], v[j + 1]);
+					if (norm1 != 0 && norm2 != 0)
+					{
+						if (norm1 > norm2)
+						{
+							v[j + 1].SetName(to_string(j));
+							std::swap(v[j], v[j + 1]);
+						}
+						else if (norm1 < norm2)
+						{
+							v[j].SetName(to_string(j));
+						}
+					}
+					break;
+				case MeasureType::je:
+					norm1 = JointEntropy(v[i], v[j]);
+					norm2 = JointEntropy(v[i], v[j + 1]);
+					if (norm1 != 0 && norm2 != 0)
+					{
+						if (norm1 > norm2)
+						{
+							v[j + 1].SetName(to_string(j));
+							std::swap(v[j], v[j + 1]);
+						}
+						else if (norm1 < norm2)
+						{
+							v[j].SetName(to_string(j));
+						}
+					}
+					break;
+				case MeasureType::kl:
+					norm1 = RelativeEntropy(v[i], v[j]);
+					norm2 = RelativeEntropy(v[i], v[j + 1]);
+					if (norm1 != 0 && norm2 != 0)
+					{
+						if (norm1 > norm2)
+						{
+							v[j + 1].SetName(to_string(j));
+							std::swap(v[j], v[j + 1]);
+						}
+						else if (norm1 < norm2)
+						{
+							v[j].SetName(to_string(j));
+						}
+					}
+					break;
 				case MeasureType::l1Norm:
 					norm1 = L1Norm(v[i], v[j]);
 					norm2 = L1Norm(v[i], v[j + 1]);

@@ -1,23 +1,41 @@
 #include "stdafx.h"
-#include "Entropy.h"
+#include "ImageRegister.h"
+#include "Common.h"
 #undef max
 
 
 
-Entropy::Entropy(string fixed_path, string moving_path)
-	:histSize(255)
+ImageRegister::ImageRegister(string fixed_path, string moving_path)
+	:histSize(2048)
 {
 	getImages(fixed_path, moving_path);
 }
 
-Entropy::~Entropy()
+ImageRegister::ImageRegister(Mat fixed_mat, Mat moving_mat, cv::Size resize_to):histSize(2048)
+{
+	fixed = fixed_mat;
+	moving = moving_mat;
+
+	if (!fixed.data || !moving.data)
+	{
+		throw exception( "No image data available!");
+	}
+
+
+	resize(fixed, fixed, resize_to);
+	resize(moving, moving, resize_to);
+
+	auto fixed_size = fixed.size();
+	auto moving_size = moving.size();
+}
+
+ImageRegister::~ImageRegister()
 {
 
 }
 
-int Entropy::getImages(string fixed_path, string moving_path)
+int ImageRegister::getImages(string fixed_path, string moving_path)
 {
-
 	fixed = imread(fixed_path);
 	moving = imread(moving_path);
 
@@ -30,15 +48,23 @@ int Entropy::getImages(string fixed_path, string moving_path)
 	Size size_fixed = fixed.size();
 	Size size_moving = moving.size();
 
+	resize(fixed, fixed, cv::Size(32, 32));
+	resize(moving, moving, cv::Size(32, 32));
+
 	if ((size_fixed.height*size_fixed.width) > (size_moving.height*size_moving.width))
 		resize(moving, moving, fixed.size());
 	else
 		resize(fixed, fixed, moving.size());
+	auto fixed_size = fixed.size();
+	auto moving_size = moving.size();
+
+	cout << "Fixed image : (" << fixed_size.height<< "," << fixed_size.width<< ")\n";
+	cout << "Moving image : (" << moving_size.height<< "," << moving_size.width<< ")\n";
 
 	return OK;
 }
 
-Mat Entropy::calLog2(Mat mat_src)
+Mat ImageRegister::calLog2(Mat mat_src)
 {
 	Mat mat_corr, loge_mat;
 	cv::max(mat_src, Scalar::all(1e-10), mat_corr);
@@ -48,7 +74,7 @@ Mat Entropy::calLog2(Mat mat_src)
 	return log2_mat;
 }
 
-double Entropy::getNormalRandomNumber(double mean, double stddev, int type)
+double ImageRegister::getNormalRandomNumber(double mean, double stddev, int type)
 {
 	/* TODO
 	 * > Add different generator modes
@@ -59,7 +85,7 @@ double Entropy::getNormalRandomNumber(double mean, double stddev, int type)
 	return na;
 }
 
-Mat Entropy::calHistogram(Mat image)
+Mat ImageRegister::ComputeHistogram(Mat image)
 {
 	Mat hist = Mat::zeros(1, histSize, CV_32FC1);
 
@@ -73,8 +99,10 @@ Mat Entropy::calHistogram(Mat image)
 	return hist;
 }
 
-Mat Entropy::calJointHistogram(Mat image_1, Mat image_2)
+Mat ImageRegister::ComputeJointHistogram(Mat image_1, Mat image_2)
 {
+	/*cvtColor(image_1, image_1, cv::COLOR_BGR2GRAY);
+	cvtColor(image_2, image_2, cv::COLOR_BGR2GRAY);*/
 	/* TODO
 	 * > Verify this calculation
 	 * > Search a better method to do this.
@@ -83,21 +111,27 @@ Mat Entropy::calJointHistogram(Mat image_1, Mat image_2)
 	Size image_size = image_1.size();
 	jpdf = Mat::zeros(histSize, histSize, CV_32FC1);
 
+	assert(image_size.height == image_2.size().height, "The two images have different sizes!!");
+
 	for (int i = 0; i < image_size.height; i++)
 	{
 		for (int j = 0; j < image_size.width; j++)
 		{
-			jpdf.at<float>(image_1.at<uchar>(i, j), image_2.at<uchar>(i, j)) = (float)(jpdf.at<float>(image_1.at<uchar>(i, j), image_2.at<uchar>(i, j)) + 1);
+			try {
+				jpdf.at<float>(image_1.at<uchar>(i, j), image_2.at<uchar>(i, j)) = (float)(jpdf.at<float>(image_1.at<uchar>(i, j), image_2.at<uchar>(i, j)) + 1);
+			}
+			catch (...) {
+				continue;
+			}
 		}
 	}
 
 	return jpdf;
 }
-
-float Entropy::calEntropy(Mat image)
+float ImageRegister::ComputeEntropy(Mat image)
 {
 	float entropy;
-	Mat hist = calHistogram(image);
+	Mat hist = ComputeHistogram(image);
 	hist /= image.total();
 	Mat logP = calLog2(hist);
 	entropy = -1 * sum(hist.mul(logP)).val[0];
@@ -105,13 +139,25 @@ float Entropy::calEntropy(Mat image)
 	return entropy;
 }
 
-float Entropy::calJointEntropy(Mat image_1, Mat image_2)
+float ImageRegister::ComputeRelativeEntropy(Mat image_1, Mat image_2)
+{
+	float re;
+
+	auto hist_1 = ComputeHistogram(image_1);
+	auto hist_2 = ComputeHistogram(image_2);
+
+	re = sum(hist_1.mul(calLog2(hist_1 / hist_2))).val[0];
+
+	return re;
+}
+
+float ImageRegister::ComputeJointEntropy(Mat image_1, Mat image_2)
 {
 	/* TODO
 	 * > Verify this calculation
 	 */
 	float je;
-	Mat jpdf = calJointHistogram(image_1, image_2);
+	Mat jpdf = ComputeJointHistogram(image_1, image_2);
 	jpdf = jpdf / (sum(jpdf).val[0]); // Normalized Joint Histogram       
 	Mat logJP = calLog2(jpdf);
 	je = -1 * sum(jpdf.mul(logJP)).val[0];
@@ -119,18 +165,18 @@ float Entropy::calJointEntropy(Mat image_1, Mat image_2)
 	return je;
 }
 
-float Entropy::calMutualInformation(Mat image_1, Mat image_2)
+float ImageRegister::ComputeMutualInformation(Mat image_1, Mat image_2)
 {
 	float mi;
-	float entropy_1 = calEntropy(image_1);
-	float entropy_2 = calEntropy(image_2);
-	float joint_entropy = calJointEntropy(image_1, image_2);
+	float entropy_1 = ComputeEntropy(image_1);
+	float entropy_2 = ComputeEntropy(image_2);
+	float joint_entropy = ComputeJointEntropy(image_1, image_2);
 	mi = entropy_1 + entropy_2 - joint_entropy;
 
 	return mi;
 }
 
-double Entropy::calMaxMutualInformationValue(Mat image_1, Mat image_2, int points, int max_iterations)
+double ImageRegister::ComputeMaxMutualInformationValue(Mat image_1, Mat image_2, int points, int max_iterations)
 {
 	/* TODO
 	 * > Develop image rotation and translation methods
@@ -138,7 +184,7 @@ double Entropy::calMaxMutualInformationValue(Mat image_1, Mat image_2, int point
 	 * > Develop the Simulated Annealing method
 	 */
 	double max_mi=0.0;
-	double mi_init = calMutualInformation(image_1, image_2);
+	double mi_init = ComputeMutualInformation(image_1, image_2);
 
 	/* Initial values */
 	double mi_test = mi_init;

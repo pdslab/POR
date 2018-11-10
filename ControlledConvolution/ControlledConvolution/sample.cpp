@@ -131,14 +131,16 @@ void Sample::GeneratePatchProposals(const cv::Size& size)
 {
 	if (!Common::IsPower2(size.area()))
 	{
-		cerr << "Unable to generate Patch proposals. Patch type is not square";
-		throw("Unable to generate Patch proposals. Patch type is not square");
+		auto message = "Unable to generate Patch proposals. Patch size is not square. input (" + to_string(size.height) + "," + to_string(size.width) + "), patch(" + to_string(height_) + "," + to_string(width_) + ")";
+		cerr << message;
+		throw(message);
 	}
 
 	if (size.height > height_ || size.width > width_)
 	{
-		cerr << "Unable to generate Patch proposals. Patch has larger dimensions thatn input";
-		throw("Unable to generate Patch proposals. Patch type is not square");
+		auto message = "Unable to generate Patch proposals. Patch has larger dimensions than input. input (" + to_string(size.height) + "," + to_string(size.width) + "), patch(" + to_string(height_) + "," + to_string(width_) + ")";
+		cerr << message;
+		throw(message);
 	}
 
 	Coordinate c;

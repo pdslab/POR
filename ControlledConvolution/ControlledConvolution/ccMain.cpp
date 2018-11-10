@@ -4,7 +4,7 @@
 #include <GL/glut.h>
 #include <stdio.h>
 #include <iterator>
-#include "Entropy.h"
+#include "ImageRegister.h"
 #include "Sample.h"
 #include "Common.h"
 #include "Patch.h"
@@ -142,57 +142,42 @@ static string ToString(const SemiRandomSortType & order)
 
 int main(const int argc, char** argv)
 {
-	Entropy imgRegister("E:\\DATA\cifar\\cifar10\\grouped\\train\\airplane\\29_airplane.png", "E:\\DATA\\cifar\\cifar10\\grouped\\train\\airplane\\30_airplane.png");
+	//auto image1 = imread("E:\\DATA\\caltech\\caltech101\\original\\accordion\\image_0001.jpg");
+	//auto image2 = imread("E:\\DATA\\caltech\\caltech101\\original\\accordion\\image_0001.jpg");
+	////ImageRegister imgRegister("E:\\DATA\\caltech\\caltech101\\original\\accordion\\image_0001.jpg", "E:\\DATA\\caltech\\caltech101\\original\\accordion\\image_0002.jpg");
+	//ImageRegister imgRegister(image1, image2, cv::Size(32, 32));
+	///* Histograms calculation */
+	//Mat hist_fixed = imgRegister.ComputeHistogram(imgRegister.GetFixedImage());
+	//Mat hist_moving = imgRegister.ComputeHistogram(imgRegister.GetMovingImage());
 
-	/* Histograms calculation */
-	Mat hist_fixed = imgRegister.calHistogram(imgRegister.getFixedImage());
-	Mat hist_moving = imgRegister.calHistogram(imgRegister.getMovingImage());
+	///* Joint Histogram calculation */
 
-	/* Joint Histogram calculation */
+	//Mat joint_hist = imgRegister.ComputeJointHistogram(imgRegister.GetFixedImage(), imgRegister.GetMovingImage());
+	//double minVal;
+	//double maxVal;
+	//Point minLoc;
+	//Point maxLoc;
 
-	Mat joint_hist = imgRegister.calJointHistogram(imgRegister.getFixedImage(), imgRegister.getMovingImage());
-	double minVal;
-	double maxVal;
-	Point minLoc;
-	Point maxLoc;
+	//minMaxLoc(joint_hist, &minVal, &maxVal, &minLoc, &maxLoc);
 
-	minMaxLoc(joint_hist, &minVal, &maxVal, &minLoc, &maxLoc);
-
-	cout << "Joint Histogram minimal value : " << minVal << endl;
-	cout << "Joint Histogram maximal value : " << maxVal << endl;
-
-	/* Draw histograms */
-	int hist_w = 512; int hist_h = 400;
-	int bin_w = cvRound((double)hist_w / imgRegister.getHistSize());
-
-	Mat histImageFixed(hist_h, hist_w, CV_8UC1, Scalar(0, 0, 0));
-	Mat histImageMoving(hist_h, hist_w, CV_8UC1, Scalar(0, 0, 0));
-
-	normalize(hist_fixed, hist_fixed, 0, histImageFixed.rows, NORM_MINMAX, -1, Mat());
-	normalize(hist_moving, hist_moving, 0, histImageMoving.rows, NORM_MINMAX, -1, Mat());
-
-	for (int i = 1; i < imgRegister.getHistSize(); i++)
-	{
-		line(histImageFixed, Point(bin_w*(i - 1), hist_h - cvRound(hist_fixed.at<float>(i - 1))),
-			Point(bin_w*(i), hist_h - cvRound(hist_fixed.at<float>(i))),
-			Scalar(255, 0, 0), 2, 8, 0);
-		line(histImageMoving, Point(bin_w*(i - 1), hist_h - cvRound(hist_moving.at<float>(i - 1))),
-			Point(bin_w*(i), hist_h - cvRound(hist_moving.at<float>(i))),
-			Scalar(255, 0, 0), 2, 8, 0);
-	}
-	/* Testing */
-
-	cout << "Fixed image entropy : " << imgRegister.calEntropy(imgRegister.getFixedImage()) << endl;
-	cout << "Moving image entropy : " << imgRegister.calEntropy(imgRegister.getMovingImage()) << endl;
-	cout << "Joint Entropy : " << imgRegister.calJointEntropy(imgRegister.getFixedImage(), imgRegister.getMovingImage()) << endl;
-	cout << "Mutual Information : " << imgRegister.calMutualInformation(imgRegister.getFixedImage(), imgRegister.getMovingImage()) << endl;
-
-	imgRegister.calMaxMutualInformationValue(imgRegister.getFixedImage(), imgRegister.getMovingImage(), 1, 1);
-
-	/* Display images and histograms */
+	//cout << "Joint Histogram minimal value : " << minVal << endl;
+	//cout << "Joint Histogram maximal value : " << maxVal << endl;
 
 
-	return -1;
+	///* Testing */
+
+	//cout << "Fixed image entropy : " << imgRegister.ComputeEntropy(imgRegister.GetFixedImage()) << endl;
+	//cout << "Moving image entropy : " << imgRegister.ComputeEntropy(imgRegister.GetMovingImage()) << endl;
+	//cout << "Joint Entropy : " << imgRegister.ComputeJointEntropy(imgRegister.GetFixedImage(), imgRegister.GetMovingImage()) << endl;
+	//cout << "Mutual Information : " << imgRegister.ComputeMutualInformation(imgRegister.GetFixedImage(), imgRegister.GetMovingImage()) << endl;
+
+	//imgRegister.ComputeMaxMutualInformationValue(imgRegister.GetFixedImage(), imgRegister.GetMovingImage(), 1, 1);
+
+	///* Display images and histograms */
+
+
+	//return -1;
+
 	cout << "Starting ...\n";
 	const String keys =
 		"{help h usage ?   |      | print this message}"
@@ -203,8 +188,8 @@ int main(const int argc, char** argv)
 		"{format f         |jpeg| output format}"
 		"{x patch_width pw |8| patch width }"
 		"{patch_height ph y   |8| patch height}"
-		"{height h         |32| resize input to this size before processing}"
-		"{width w          |32| resize input to this size before processing}"
+		"{height h         |224| resize input to this size before processing}"
+		"{width w          |224| resize input to this size before processing}"
 		"{datasetEntropy |false| resize input to this size before processing}"
 		"{order |-1| ordering of patches during sorting. Options(0=increasing, 1=decreasing, 2=randomShuffle)}"
 		"{resize r |32| resize input to this size}"
@@ -290,6 +275,7 @@ int main(const int argc, char** argv)
 	else if (measure == "mi" || measure == "mutual_information") mt = MeasureType::mi;
 	else if (measure == "je" || measure == "joint_entropy") mt = MeasureType::je;
 	else if (measure == "ce" || measure == "conditional_entropy") mt = MeasureType::ce;
+	else if (measure == "kl" || measure == "k-l") mt = MeasureType::kl;
 	else
 	{
 		cerr << "Exit code: -4, Unknown measure type. Aborting ...\n";
@@ -430,12 +416,6 @@ int main(const int argc, char** argv)
 		auto s = new Sample(sample);
 		s->ToCvMat(inputSize,roundup);
 
-	/*	while (!done)
-		{
-			Common::Show(s->Mat(), title);
-			cin.ignore();
-			done = true;
-		}*/
 
 		cv::TickMeter ts;
 		ts.start();
@@ -459,11 +439,6 @@ int main(const int argc, char** argv)
 			const auto name = Common::GeneratePatchName(patchCoordinate);
 			p.SetName(name);
 			p.ToPixel();
-			//p.Save(saveOutput, "bmp");
-
-			//STEP 4. Compute standalone image characterstics
-			//p.ComputeHisogram();
-
 			s->AddPatch(p);
 			img.release();
 			cout << "#";

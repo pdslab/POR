@@ -60,7 +60,7 @@
     <ClInclude Include="ImageMeasure.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Entropy.h">
+    <ClInclude Include="ImageRegister.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -104,7 +104,7 @@
     <ClCompile Include="ImageMeasure.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Entropy.cpp">
+    <ClCompile Include="ImageRegister.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

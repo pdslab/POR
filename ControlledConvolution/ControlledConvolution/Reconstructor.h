@@ -23,7 +23,7 @@ enum class MeasureType
 	psnr,je,ce, mi, pixel,
 	ssimAverage, ssim0,
 	ssim1, ssim2,
-	custom
+	custom,kl
 };
 
 enum class SemiRandomSortType
@@ -89,7 +89,7 @@ public:
 	/// <param name="p1">The p1.</param>
 	/// <param name="p2">The p2.</param>
 	/// <returns></returns>
-	static double JointEntropy(const Patch& p1, const Patch& p2);
+	static float JointEntropy(const Patch& p1, const Patch& p2);
 	/// <summary>
 	/// Mutuals the information.
 	/// </summary>
@@ -104,6 +104,8 @@ public:
 	/// <param name="p2">The p2.</param>
 	/// <returns></returns>
 	static cv::Scalar StructuralSimilarityIndex(const Patch& p1, const Patch& p2);
+
+	static double RelativeEntropy(const Patch& p1, const Patch &p2);
 
 #pragma region constructors
 	Reconstructor();
