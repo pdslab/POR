@@ -1,1 +1,1 @@
-## This repo is setup for my ongoing phd project called Controlled Convolution -> more to come 
+## This repo is setup for our ongoing phd project called Controlled Convolution
